@@ -54,14 +54,6 @@ export default function Home() {
       {/* Mascotas Destacadas - Resumen */}
       <section className="px-6 py-10 mx-auto bg-white shadow-lg rounded-t-xl max-w-7xl">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold tracking-wide text-purple-800">Mascotas Destacadas</h2>
-          <button
-            onClick={() => navigate('/mascotas-destacadas')}
-            className="text-sm font-semibold text-blue-600 hover:underline"
-            type="button"
-          >
-            Ver más
-          </button>
         </div>
         <FeaturedPets summary={true} maxItems={3} />
       </section>
@@ -69,14 +61,6 @@ export default function Home() {
       {/* Productos Esenciales - Resumen */}
       <section className="px-6 py-10 mx-auto mt-10 shadow-sm bg-gray-50 rounded-xl max-w-7xl">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold tracking-wide text-purple-800">Productos Esenciales</h2>
-          <button
-            onClick={() => navigate('/productos')}
-            className="text-sm font-semibold text-blue-600 hover:underline"
-            type="button"
-          >
-            Ver más
-          </button>
         </div>
         <EsencialesCarousel summary={true} maxItems={5} />
       </section>
