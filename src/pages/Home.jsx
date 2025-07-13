@@ -8,6 +8,7 @@ import SuccessStories from '../components/SuccessStories';
 import TrackingDevices from '../components/TrackingDevices';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function Home() {
             className="text-sm font-semibold text-blue-600 hover:underline"
             type="button"
           >
-            
+            {/* Aquí podés poner texto para el botón si querés */}
           </button>
         </div>
         <FeaturedPets summary={true} maxItems={3} />
@@ -74,10 +75,40 @@ export default function Home() {
             className="text-sm font-semibold text-blue-600 hover:underline"
             type="button"
           >
-            
+            {/* Aquí podés poner texto para el botón si querés */}
           </button>
         </div>
         <EsencialesCarousel summary={true} maxItems={5} />
+      </section>
+
+      {/* Tarjeta Quiénes Somos */}
+      <section className="max-w-3xl p-6 mx-auto my-8 transition-shadow bg-white shadow-md cursor-pointer rounded-xl hover:shadow-lg">
+        <Link to="/nosotros" className="block">
+          <h2 className="mb-2 text-2xl font-bold text-purple-800">
+            Conocé más sobre Pet Link
+          </h2>
+          <p className="leading-relaxed text-gray-700">
+            Descubrí quiénes somos, nuestra misión y los valores que nos guían para cuidar a tus mascotas.
+          </p>
+          <button className="px-5 py-2 mt-4 font-semibold text-white transition bg-purple-600 rounded-full hover:bg-purple-700">
+            Ir a Nosotros
+          </button>
+        </Link>
+      </section>
+
+      {/* Tarjeta Donaciones */}
+      <section className="max-w-3xl p-6 mx-auto my-8 transition-shadow bg-white shadow-md cursor-pointer rounded-xl hover:shadow-lg">
+        <Link to="/donaciones" className="block">
+          <h2 className="mb-2 text-2xl font-bold text-purple-800">
+            Ayudá a las organizaciones
+          </h2>
+          <p className="leading-relaxed text-gray-700">
+            Conocé las organizaciones que necesitan donaciones y cómo podés colaborar con ellas.
+          </p>
+          <button className="px-5 py-2 mt-4 font-semibold text-white transition bg-green-600 rounded-full hover:bg-green-700">
+            Ir a Donaciones
+          </button>
+        </Link>
       </section>
 
       {/* Pet Society - Resumen */}
@@ -89,7 +120,7 @@ export default function Home() {
             className="text-sm font-semibold text-blue-600 hover:underline"
             type="button"
           >
-            
+            {/* Aquí podés poner texto para el botón si querés */}
           </button>
         </div>
         <PetSociety summary={true} maxItems={3} />
@@ -104,7 +135,7 @@ export default function Home() {
             className="text-sm font-semibold text-blue-600 hover:underline"
             type="button"
           >
-            
+            {/* Aquí podés poner texto para el botón si querés */}
           </button>
         </div>
         <SuccessStories summary={true} maxItems={3} />
@@ -119,7 +150,7 @@ export default function Home() {
             className="text-sm font-semibold text-blue-600 hover:underline"
             type="button"
           >
-           
+            {/* Aquí podés poner texto para el botón si querés */}
           </button>
         </div>
         <TrackingDevices summary={true} maxItems={5} />

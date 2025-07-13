@@ -10,7 +10,10 @@ export default function AdminPanel() {
 
   const [usuarios, setUsuarios] = useState([]);
   const [mascotas, setMascotas] = useState([]);
+  const [organizaciones, setOrganizaciones] = useState([]);
+  const [organizacionesVerificadas, setOrganizacionesVerificadas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mensaje, setMensaje] = useState("");
 
   const [editingUser, setEditingUser] = useState(null);
   const [editingPet, setEditingPet] = useState(null);
@@ -22,7 +25,6 @@ export default function AdminPanel() {
       navigate("/");
       return;
     }
-
     fetchData();
   }, [user]);
 
@@ -32,8 +34,22 @@ export default function AdminPanel() {
     const { data: usuariosData } = await supabase.from("usuarios").select("*");
     const { data: mascotasData } = await supabase.from("mascotas").select("*");
 
+    const { data: organizacionesData } = await supabase
+      .from("organizaciones")
+      .select("*")
+      .eq("verificada", false)
+      .order("fecha_registro", { ascending: false });
+
+    const { data: orgsVerificadas } = await supabase
+      .from("organizaciones")
+      .select("*")
+      .eq("verificada", true)
+      .order("fecha_registro", { ascending: false });
+
     setUsuarios(usuariosData || []);
     setMascotas(mascotasData || []);
+    setOrganizaciones(organizacionesData || []);
+    setOrganizacionesVerificadas(orgsVerificadas || []);
     setLoading(false);
   };
 
@@ -46,6 +62,12 @@ export default function AdminPanel() {
   const handleDeleteMascota = async (id) => {
     if (!window.confirm("¿Eliminar esta mascota?")) return;
     await supabase.from("mascotas").delete().eq("id", id);
+    fetchData();
+  };
+
+  const handleDeleteOrganizacion = async (id) => {
+    if (!window.confirm("¿Eliminar esta organización?")) return;
+    await supabase.from("organizaciones").delete().eq("id", id);
     fetchData();
   };
 
@@ -63,6 +85,21 @@ export default function AdminPanel() {
     fetchData();
   };
 
+  const aprobarOrganizacion = async (id) => {
+    const { error } = await supabase
+      .from("organizaciones")
+      .update({ verificada: true })
+      .eq("id", id);
+
+    if (!error) {
+      setMensaje("Organización aprobada.");
+      fetchData();
+      setTimeout(() => setMensaje(""), 2000);
+    } else {
+      setMensaje("Error al aprobar la organización.");
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -70,7 +107,7 @@ export default function AdminPanel() {
 
   if (!user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="flex items-center justify-center min-h-screen p-6">
         <p>No estás autorizado para acceder a esta página.</p>
       </div>
     );
@@ -78,7 +115,7 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen p-6 bg-gray-50">
-      <h1 className="text-4xl font-bold mb-6">Panel de Administración</h1>
+      <h1 className="mb-6 text-4xl font-bold">Panel de Administración</h1>
 
       {loading ? (
         <p>Cargando datos...</p>
@@ -86,7 +123,7 @@ export default function AdminPanel() {
         <>
           {/* Usuarios */}
           <section className="mb-10">
-            <h2 className="text-2xl font-semibold mb-4">Usuarios</h2>
+            <h2 className="mb-4 text-2xl font-semibold">Usuarios</h2>
             <div className="overflow-auto max-h-[300px] border rounded bg-white p-4">
               <table className="w-full text-sm">
                 <thead>
@@ -110,18 +147,8 @@ export default function AdminPanel() {
                       <td className="px-2">{u.rol}</td>
                       <td className="px-2">{u.suscripcion}</td>
                       <td className="px-2 space-x-2">
-                        <button
-                          onClick={() => setEditingUser(u)}
-                          className="text-blue-600 text-sm"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(u.id)}
-                          className="text-red-600 text-sm"
-                        >
-                          Eliminar
-                        </button>
+                        <button onClick={() => setEditingUser(u)} className="text-sm text-blue-600">Editar</button>
+                        <button onClick={() => handleDeleteUser(u.id)} className="text-sm text-red-600">Eliminar</button>
                       </td>
                     </tr>
                   ))}
@@ -132,7 +159,7 @@ export default function AdminPanel() {
 
           {/* Mascotas */}
           <section className="mb-10">
-            <h2 className="text-2xl font-semibold mb-4">Mascotas</h2>
+            <h2 className="mb-4 text-2xl font-semibold">Mascotas</h2>
             <div className="overflow-auto max-h-[300px] border rounded bg-white p-4">
               <table className="w-full text-sm">
                 <thead>
@@ -156,18 +183,8 @@ export default function AdminPanel() {
                       <td className="px-2">{m.edad}</td>
                       <td className="px-2">{m.estado}</td>
                       <td className="px-2 space-x-2">
-                        <button
-                          onClick={() => setEditingPet(m)}
-                          className="text-blue-600 text-sm"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMascota(m.id)}
-                          className="text-red-600 text-sm"
-                        >
-                          Eliminar
-                        </button>
+                        <button onClick={() => setEditingPet(m)} className="text-sm text-blue-600">Editar</button>
+                        <button onClick={() => handleDeleteMascota(m.id)} className="text-sm text-red-600">Eliminar</button>
                       </td>
                     </tr>
                   ))}
@@ -176,83 +193,112 @@ export default function AdminPanel() {
             </div>
           </section>
 
+          {/* Organizaciones Pendientes */}
+          <section className="mb-10">
+            <h2 className="mb-4 text-2xl font-semibold">Organizaciones Pendientes</h2>
+            {organizaciones.length === 0 ? (
+              <p className="text-gray-500">No hay organizaciones para verificar.</p>
+            ) : (
+              <div className="space-y-4">
+                {organizaciones.map((org) => (
+                  <div key={org.id} className="p-4 bg-white border shadow rounded-xl">
+                    <h3 className="text-lg font-semibold">{org.nombre}</h3>
+                    <p className="text-sm text-gray-600">{org.descripcion}</p>
+                    <p className="text-sm text-gray-500">📍 {org.ubicacion}</p>
+                    <p className="text-sm text-gray-500">📞 {org.contacto}</p>
+                    {org.codigo_donacion && (
+                      <p className="mt-1 text-sm text-green-600 break-all">💸 {org.codigo_donacion}</p>
+                    )}
+                    <button
+                      onClick={() => aprobarOrganizacion(org.id)}
+                      className="px-4 py-2 mt-2 text-white bg-green-600 rounded-full hover:bg-green-700"
+                    >
+                      Aprobar organización
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Organizaciones Verificadas */}
+          <section className="mb-10">
+            <h2 className="mb-4 text-2xl font-semibold">Organizaciones Activas</h2>
+            {organizacionesVerificadas.length === 0 ? (
+              <p className="text-gray-500">No hay organizaciones activas.</p>
+            ) : (
+              <div className="space-y-4">
+                {organizacionesVerificadas.map((org) => (
+                  <div key={org.id} className="p-4 bg-white border shadow rounded-xl">
+                    <h3 className="text-lg font-semibold">{org.nombre}</h3>
+                    <p className="text-sm text-gray-600">{org.descripcion}</p>
+                    <p className="text-sm text-gray-500">📍 {org.ubicacion}</p>
+                    <p className="text-sm text-gray-500">📞 {org.contacto}</p>
+                    {org.codigo_donacion && (
+                      <p className="mt-1 text-sm text-green-600 break-all">💸 {org.codigo_donacion}</p>
+                    )}
+                    <button
+                      onClick={() => handleDeleteOrganizacion(org.id)}
+                      className="px-4 py-2 mt-2 text-white bg-red-600 rounded-full hover:bg-red-700"
+                    >
+                      Eliminar organización
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* Edición Usuario */}
           {editingUser && (
-            <div className="bg-white p-4 rounded shadow mb-6">
-              <h3 className="text-xl font-bold mb-2">Editar Usuario</h3>
+            <div className="p-4 mb-6 bg-white rounded shadow">
+              <h3 className="mb-2 text-xl font-bold">Editar Usuario</h3>
               <input
                 type="text"
                 value={editingUser.nombre}
-                onChange={(e) =>
-                  setEditingUser({ ...editingUser, nombre: e.target.value })
-                }
+                onChange={(e) => setEditingUser({ ...editingUser, nombre: e.target.value })}
                 placeholder="Nombre"
-                className="border p-2 mb-2 w-full"
+                className="w-full p-2 mb-2 border"
               />
               <input
                 type="text"
                 value={editingUser.apellido}
-                onChange={(e) =>
-                  setEditingUser({ ...editingUser, apellido: e.target.value })
-                }
+                onChange={(e) => setEditingUser({ ...editingUser, apellido: e.target.value })}
                 placeholder="Apellido"
-                className="border p-2 mb-2 w-full"
+                className="w-full p-2 mb-2 border"
               />
-              <button
-                onClick={handleUpdateUser}
-                className="bg-green-600 text-white px-4 py-2 rounded mr-2"
-              >
-                Guardar
-              </button>
-              <button
-                onClick={() => setEditingUser(null)}
-                className="bg-gray-300 px-4 py-2 rounded"
-              >
-                Cancelar
-              </button>
+              <button onClick={handleUpdateUser} className="px-4 py-2 mr-2 text-white bg-green-600 rounded">Guardar</button>
+              <button onClick={() => setEditingUser(null)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
             </div>
           )}
 
           {/* Edición Mascota */}
           {editingPet && (
-            <div className="bg-white p-4 rounded shadow mb-6">
-              <h3 className="text-xl font-bold mb-2">Editar Mascota</h3>
+            <div className="p-4 mb-6 bg-white rounded shadow">
+              <h3 className="mb-2 text-xl font-bold">Editar Mascota</h3>
               <input
                 type="text"
                 value={editingPet.nombre}
-                onChange={(e) =>
-                  setEditingPet({ ...editingPet, nombre: e.target.value })
-                }
+                onChange={(e) => setEditingPet({ ...editingPet, nombre: e.target.value })}
                 placeholder="Nombre"
-                className="border p-2 mb-2 w-full"
+                className="w-full p-2 mb-2 border"
               />
               <input
                 type="text"
                 value={editingPet.raza}
-                onChange={(e) =>
-                  setEditingPet({ ...editingPet, raza: e.target.value })
-                }
+                onChange={(e) => setEditingPet({ ...editingPet, raza: e.target.value })}
                 placeholder="Raza"
-                className="border p-2 mb-2 w-full"
+                className="w-full p-2 mb-2 border"
               />
-              <button
-                onClick={handleUpdateMascota}
-                className="bg-green-600 text-white px-4 py-2 rounded mr-2"
-              >
-                Guardar
-              </button>
-              <button
-                onClick={() => setEditingPet(null)}
-                className="bg-gray-300 px-4 py-2 rounded"
-              >
-                Cancelar
-              </button>
+              <button onClick={handleUpdateMascota} className="px-4 py-2 mr-2 text-white bg-green-600 rounded">Guardar</button>
+              <button onClick={() => setEditingPet(null)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
             </div>
           )}
 
+          {/* Logout */}
           <button
             onClick={handleLogout}
-            className="mt-8 bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 transition"
+            className="px-6 py-3 mt-8 text-white transition bg-red-600 rounded hover:bg-red-700"
           >
             Cerrar sesión
           </button>

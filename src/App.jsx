@@ -17,15 +17,18 @@ import CargarProducto from "./pages/CargarProductos";
 import ReportLostPets from "./components/ReportLostPets";
 import LostPets from "./pages/LostPets";
 import AdministrarQR from "./components/AdministrarQR";
-import PetSociety from "./components/PetSociety";  
+import PetSociety from "./components/PetSociety";
 import Salud from "./components/PetSocietyPages/Salud";
 import Entrenamiento from "./components/PetSocietyPages/Entrenamiento";
 import Historias from "./components/PetSocietyPages/Historias";
 import Eventos from "./components/PetSocietyPages/Eventos";
 import Recursos from "./components/PetSocietyPages/Recursos";
-
-// Importa SuccessStories
+import Nosotros from "./pages/Nosotros"; // Importación corregida
 import SuccessStories from "./components/SuccessStories";
+
+// NUEVAS IMPORTACIONES
+import Donaciones from "./pages/Donaciones";
+import RegistrarOrganizacion from "./pages/RegistrarOrganizacion";
 
 import BottomNav from "./components/BottomNav";
 import { CartProvider } from "./components/CartContext";
@@ -47,7 +50,7 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/adopciones" element={<Adopciones />} />
               <Route path="/productos" element={<Productos />} />
-              <Route path="/pet-society" element={<PetSociety />} />  
+              <Route path="/pet-society" element={<PetSociety />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/reportar-perdida" element={<ReportLostPets />} />
@@ -57,6 +60,11 @@ export default function App() {
               <Route path="/pet-society/historias" element={<Historias />} />
               <Route path="/pet-society/eventos" element={<Eventos />} />
               <Route path="/pet-society/recursos" element={<Recursos />} />
+              <Route path="/nosotros" element={<Nosotros />} /> {/* Ruta corregida */}
+
+              {/* NUEVAS RUTAS */}
+              <Route path="/donaciones" element={<Donaciones />} />
+              <Route path="/registrar-organizacion" element={<RegistrarOrganizacion />} />
 
               {/* Páginas protegidas */}
               <Route
@@ -99,7 +107,6 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              {/* NUEVA ruta adminblog */}
               <Route
                 path="/adminblog"
                 element={
@@ -110,10 +117,7 @@ export default function App() {
               />
 
               {/* Nueva ruta para casos de éxito (testimonios) */}
-              <Route
-                path="/casos-exito"
-                element={<SuccessStories />}
-              />
+              <Route path="/casos-exito" element={<SuccessStories />} />
             </Routes>
           </div>
 
