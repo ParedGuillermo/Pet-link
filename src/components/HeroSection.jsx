@@ -1,7 +1,7 @@
 import React from 'react';
 
 const HeroSection = ({ onReportClick }) => (
-  <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12 px-4 text-center shadow-md min-h-[300px] flex flex-col justify-center">
+  <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12 px-6 text-center shadow-xl rounded-3xl min-h-[300px] flex flex-col justify-center max-w-4xl mx-auto transition-transform duration-300 hover:scale-[1.02]">
     <h1 className="mb-4 text-2xl font-bold">
       ¿Tu mascota se ha perdido?
     </h1>
