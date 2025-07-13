@@ -66,7 +66,7 @@ export default function Nosotros() {
         </p>
       </section>
 
-      {/* Sección App Android */}
+      {/* Sección App Android con instrucciones */}
       <section className="p-6 mt-12 text-center bg-gray-100 shadow-md rounded-xl">
         <h2 className="mb-4 text-3xl font-semibold text-purple-700">¡Descargá nuestra App Android!</h2>
         <p className="mb-4 text-lg text-gray-700">
@@ -80,6 +80,36 @@ export default function Nosotros() {
         >
           Descargar App Android
         </a>
+
+        <div className="max-w-xl p-4 mx-auto mt-6 text-left bg-white border border-gray-300 rounded-lg">
+          <h3 className="mb-2 text-xl font-semibold text-purple-700">Instrucciones para la instalación:</h3>
+          <ol className="space-y-2 text-gray-700 list-decimal list-inside">
+            <li>
+              Al presionar "Descargar App Android", el archivo APK comenzará a descargarse en tu dispositivo.
+            </li>
+            <li>
+              Es posible que aparezca un aviso indicando que el archivo podría ser dañino. Esto es normal para apps instaladas fuera de la Play Store.
+            </li>
+            <li>
+              Luego de descargar, abrí el archivo APK para iniciar la instalación.
+            </li>
+            <li>
+              Aparecerá un menú que recomienda analizar la app para mayor seguridad. Podés elegir "Analizar app" o "No instalar".
+            </li>
+            <li>
+              Si elegís "Analizar app", verás un mensaje que te permitirá continuar con la instalación. Allí podrás presionar "Instalar" o "No instalar".
+            </li>
+            <li>
+              Presioná "Instalar" para finalizar la instalación.
+            </li>
+            <li>
+              Al terminar, podés abrir la app y comenzar a usarla normalmente.
+            </li>
+          </ol>
+          <p className="mt-4 text-sm italic text-gray-500">
+            Estas medidas son comunes en instalaciones manuales para proteger tu dispositivo. ¡Gracias por confiar en Pets Link!
+          </p>
+        </div>
       </section>
     </div>
   );
