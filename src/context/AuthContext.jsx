@@ -74,6 +74,10 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
 
     const user = data?.user;
+
+    // 👇 Agregamos el log para depurar
+    console.log("🧪 USER DESPUÉS DE REGISTRO:", user); // <-- Log importante
+
     if (user) {
       // Inserta el usuario en la tabla 'usuarios'
       const { error: insertError } = await supabase
@@ -85,7 +89,10 @@ export const AuthProvider = ({ children }) => {
           },
         ]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("❌ Error al insertar en usuarios:", insertError); // <-- Log de error
+        throw insertError;
+      }
     }
 
     return data;
