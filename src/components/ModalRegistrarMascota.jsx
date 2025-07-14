@@ -115,7 +115,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-lg p-6 bg-white rounded-lg shadow-lg overflow-auto max-h-[90vh] pb-16"> {/* Añadir padding-bottom aquí */}
+      <div className="w-full max-w-lg p-6 bg-white rounded-lg shadow-lg overflow-auto max-h-[90vh] sm:max-w-md sm:h-auto md:max-w-2xl lg:max-w-3xl xl:max-w-4xl pb-16">
         <h2 className="mb-4 text-xl font-semibold text-center">Registrar Mascota</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input name="nombre" placeholder="Nombre *" required value={form.nombre} onChange={handleChange} className="w-full p-2 border rounded" />
