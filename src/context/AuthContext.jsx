@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Registro y creación en tabla usuarios
-  const register = async (email, password) => {
+  const register = async (email, password, nombre, apellido) => {
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -74,18 +74,19 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
 
     const user = data?.user;
-
-    // 👇 Agregamos el log para depurar
-    console.log("🧪 USER DESPUÉS DE REGISTRO:", user); // <-- Log importante
+    console.log("🧪 USER DESPUÉS DE REGISTRO:", user); // <-- Log importante para depurar
 
     if (user) {
-      // Inserta el usuario en la tabla 'usuarios'
+      // Insertar usuario con más datos en la tabla 'usuarios'
       const { error: insertError } = await supabase
         .from("usuarios")
         .insert([
           {
-            id: user.id,        // UUID de auth
-            email: user.email,  // otros campos opcionales
+            id: user.id,               // UUID de auth
+            correo: user.email,         // Email del usuario
+            nombre: nombre,             // Nombre
+            apellido: apellido,         // Apellido
+            // Agregar más campos si lo necesitas, como 'telefono', 'avatar_url', etc.
           },
         ]);
 

@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -7,9 +6,12 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  // Estado para los campos del formulario
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [nombre, setNombre] = useState("");  // Nuevo campo para nombre
+  const [apellido, setApellido] = useState("");  // Nuevo campo para apellido
   const [errorMsg, setErrorMsg] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +19,7 @@ export default function Register() {
     e.preventDefault();
     setErrorMsg(null);
 
+    // Verificar que las contraseñas coincidan
     if (password !== confirmPassword) {
       setErrorMsg("Las contraseñas no coinciden");
       return;
@@ -24,7 +27,8 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await register(email, password);
+      // Llamamos a register() pasando todos los datos: email, password, nombre y apellido
+      await register(email, password, nombre, apellido);
       alert("Registrado con éxito! Por favor, confirma tu email antes de iniciar sesión.");
       navigate("/login");
     } catch (error) {
@@ -40,6 +44,25 @@ export default function Register() {
         onSubmit={handleSubmit}
         className="flex flex-col w-full max-w-md gap-5 p-6 bg-white rounded shadow"
       >
+        {/* Campo Nombre */}
+        <input
+          type="text"
+          placeholder="Nombre"
+          className="p-3 text-base border rounded"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          required
+        />
+        {/* Campo Apellido */}
+        <input
+          type="text"
+          placeholder="Apellido"
+          className="p-3 text-base border rounded"
+          value={apellido}
+          onChange={(e) => setApellido(e.target.value)}
+          required
+        />
+        {/* Campo Correo */}
         <input
           type="email"
           placeholder="Correo electrónico"
@@ -49,6 +72,7 @@ export default function Register() {
           required
           autoComplete="email"
         />
+        {/* Campo Contraseña */}
         <input
           type="password"
           placeholder="Contraseña"
@@ -58,6 +82,7 @@ export default function Register() {
           required
           autoComplete="new-password"
         />
+        {/* Confirmar Contraseña */}
         <input
           type="password"
           placeholder="Confirmar contraseña"
@@ -67,7 +92,11 @@ export default function Register() {
           required
           autoComplete="new-password"
         />
+        
+        {/* Mostrar mensaje de error */}
         {errorMsg && <p className="text-center text-red-600">{errorMsg}</p>}
+
+        {/* Botón de envío */}
         <button
           type="submit"
           disabled={loading}
