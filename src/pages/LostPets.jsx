@@ -1,37 +1,64 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import ReportLostPets from "../components/ReportLostPets";
+import { useLocation } from "react-router-dom";
 
 export default function LostPets() {
   const [mascotasPerdidas, setMascotasPerdidas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const location = useLocation();
+
+  const fetchMascotas = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("mascotas")
+      .select("*")
+      .eq("estado", "reportada")
+      .order("id", { ascending: false });
+
+    if (error) {
+      setError("No se pudieron cargar las mascotas perdidas.");
+      console.error(error);
+    } else {
+      setMascotasPerdidas(data);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchMascotas = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("mascotas")
-        .select("*")
-        .eq("estado", "reportada")
-        .order("id", { ascending: false });
-
-      if (error) {
-        setError("No se pudieron cargar las mascotas perdidas.");
-        console.error(error);
-      } else {
-        setMascotasPerdidas(data);
-      }
-      setLoading(false);
-    };
-
     fetchMascotas();
   }, []);
+
+  // Abrir modal si detecta ?reportar=true en la URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("reportar") === "true") {
+      setModalOpen(true);
+    }
+  }, [location.search]);
+
+  const handleMascotaReportada = () => {
+    setModalOpen(false);
+    fetchMascotas();
+  };
 
   return (
     <div className="min-h-screen px-4 py-6 bg-cream">
       <h1 className="mb-6 text-3xl font-bold text-center text-brown-800">
         Mascotas Perdidas
       </h1>
+
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={() => setModalOpen(true)}
+          className="px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+        >
+          Reportar Mascota Perdida
+        </button>
+      </div>
 
       {loading && <p className="text-lg text-center text-gray-600">Cargando...</p>}
       {error && <p className="text-center text-red-600">{error}</p>}
@@ -79,6 +106,14 @@ export default function LostPets() {
         <p className="mt-10 text-center text-gray-600">
           No se encontraron mascotas perdidas por el momento 🐾
         </p>
+      )}
+
+      {/* Modal para reportar mascota perdida */}
+      {modalOpen && (
+        <ReportLostPets
+          onClose={() => setModalOpen(false)}
+          onMascotaReportada={handleMascotaReportada}
+        />
       )}
     </div>
   );

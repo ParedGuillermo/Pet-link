@@ -14,9 +14,8 @@ import adminIcon from "../assets/home/admin-icon.png";
 import agregarIcon from "../assets/home/agregar-icon.png";
 import reportlostIcon from "../assets/home/reportar-perdida-icon.png";
 import administrarQRIcon from "../assets/home/administrar-qr-icon.png";
-import petSocietyIcon from "../assets/home/pet-society-icon.png"; // <-- nuevo ícono
-import adminBlogIcon from "../assets/home/admin-blog-icon.png"; // o usa uno que tengas
-
+import petSocietyIcon from "../assets/home/pet-society-icon.png";
+import adminBlogIcon from "../assets/home/admin-blog-icon.png";
 
 import CartModal from "./CartModal";
 
@@ -33,16 +32,17 @@ export default function BottomNav() {
     { name: "Tienda", path: "/productos", icon: tiendaIcon },
     { name: "Escanear QR", path: "/scan", icon: qrIcon },
     { name: "Perfil", path: "/profile", icon: perfilIcon },
-    { name: "Reportar Pérdida", path: "/reportar-perdida", icon: reportlostIcon },
+    // Aquí corregimos la ruta para que funcione correctamente con LostPets y abra el modal
+    { name: "Reportar Pérdida", path: "/mascotas-perdidas?reportar=true", icon: reportlostIcon },
     { name: "Mascotas Perdidas", path: "/mascotas-perdidas", icon: perdidaIcon },
     { name: "Adopciones", path: "/adopciones", icon: adopcionIcon },
-    { name: "Pet Society", path: "/pet-society", icon: petSocietyIcon }, // <--- agregado acá
+    { name: "Pet Society", path: "/pet-society", icon: petSocietyIcon },
   ];
 
   if (isLoggedIn && user?.email === "walterguillermopared@gmail.com") {
     sections.push({ name: "Administrar QR", path: "/administrar-qr", icon: administrarQRIcon });
     sections.push({ name: "Panel Admin", path: "/admin", icon: adminIcon });
-    sections.push({ name: "Admin Blog", path: "/adminblog", icon: adminBlogIcon }); // <-- nueva
+    sections.push({ name: "Admin Blog", path: "/adminblog", icon: adminBlogIcon });
     sections.push({ name: "Cargar Producto", path: "/cargar-producto", icon: agregarIcon });
   }
 
