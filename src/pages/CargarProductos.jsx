@@ -12,6 +12,7 @@ export default function CargarProducto() {
     categoria: "",
     estado: "disponible",
     foto: null,
+    foto_url: null,
   });
 
   const [productos, setProductos] = useState([]);
@@ -55,7 +56,7 @@ export default function CargarProducto() {
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
-    let foto_url = null;
+    let foto_url = form.foto_url || null;
 
     try {
       if (form.foto) {
@@ -79,6 +80,8 @@ export default function CargarProducto() {
       const stock = form.stock ? parseInt(form.stock) : 0;
 
       if (!form.nombre.trim()) throw new Error("El nombre es obligatorio.");
+      if (precio != null && (isNaN(precio) || precio < 0)) throw new Error("Precio inválido.");
+      if (isNaN(stock) || stock < 0) throw new Error("Stock inválido.");
       if (!estados.includes(form.estado)) throw new Error("Estado inválido.");
 
       const producto = {
@@ -88,7 +91,7 @@ export default function CargarProducto() {
         stock,
         categoria: form.categoria.trim() || null,
         estado: form.estado,
-        foto_url: foto_url || form.foto_url || null,
+        foto_url,
       };
 
       if (editando) {
@@ -113,6 +116,7 @@ export default function CargarProducto() {
         categoria: "",
         estado: "disponible",
         foto: null,
+        foto_url: null,
       });
       setEditando(null);
       fetchProductos();
@@ -126,10 +130,20 @@ export default function CargarProducto() {
 
   const handleEdit = (producto) => {
     setEditando(producto.id);
-    setForm({ ...producto, foto: null });
+    setForm({
+      nombre: producto.nombre || "",
+      descripcion: producto.descripcion || "",
+      precio: producto.precio?.toString() || "",
+      stock: producto.stock?.toString() || "",
+      categoria: producto.categoria || "",
+      estado: producto.estado || "disponible",
+      foto: null,
+      foto_url: producto.foto_url || null,
+    });
   };
 
   const handleDelete = async (id) => {
+    if (loading) return;
     if (confirm("¿Seguro que querés eliminar este producto?")) {
       const { error } = await supabase.from("productos").delete().eq("id", id);
       if (!error) fetchProductos();
@@ -151,12 +165,55 @@ export default function CargarProducto() {
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input type="text" name="nombre" placeholder="Nombre *" value={form.nombre} onChange={handleChange} className="w-full p-2 border rounded" required />
-        <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="w-full p-2 border rounded" />
-        <input type="number" name="precio" placeholder="Precio" value={form.precio} onChange={handleChange} className="w-full p-2 border rounded" min="0" step="0.01" />
-        <input type="number" name="stock" placeholder="Stock" value={form.stock} onChange={handleChange} className="w-full p-2 border rounded" min="0" />
-        <input type="text" name="categoria" placeholder="Categoría" value={form.categoria} onChange={handleChange} className="w-full p-2 border rounded" />
-        <select name="estado" value={form.estado} onChange={handleChange} className="w-full p-2 border rounded">
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre *"
+          value={form.nombre}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
+        <textarea
+          name="descripcion"
+          placeholder="Descripción"
+          value={form.descripcion}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="number"
+          name="precio"
+          placeholder="Precio"
+          value={form.precio}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          min="0"
+          step="0.01"
+        />
+        <input
+          type="number"
+          name="stock"
+          placeholder="Stock"
+          value={form.stock}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          min="0"
+        />
+        <input
+          type="text"
+          name="categoria"
+          placeholder="Categoría"
+          value={form.categoria}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <select
+          name="estado"
+          value={form.estado}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        >
           {estados.map((e) => (
             <option key={e} value={e}>
               {e.charAt(0).toUpperCase() + e.slice(1)}
@@ -164,14 +221,27 @@ export default function CargarProducto() {
           ))}
         </select>
 
-        <input type="file" name="foto" accept="image/*" onChange={handleChange} className="w-full" />
+        {/* Campo oculto para mantener foto_url al editar sin cambiar foto */}
+        <input type="hidden" name="foto_url" value={form.foto_url || ""} />
+
+        <input
+          type="file"
+          name="foto"
+          accept="image/*"
+          onChange={handleChange}
+          className="w-full"
+        />
 
         {uploadingImage && <p className="text-blue-600">Subiendo imagen...</p>}
         {error && <p className="text-red-600">{error}</p>}
         {successMsg && <p className="text-green-600">{successMsg}</p>}
 
         <div className="flex gap-2">
-          <button type="submit" disabled={loading || uploadingImage} className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">
+          <button
+            type="submit"
+            disabled={loading || uploadingImage}
+            className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+          >
             {loading ? "Guardando..." : editando ? "Actualizar" : "Guardar Producto"}
           </button>
           {editando && (
@@ -187,6 +257,7 @@ export default function CargarProducto() {
                   categoria: "",
                   estado: "disponible",
                   foto: null,
+                  foto_url: null,
                 });
               }}
               className="px-4 py-2 text-white bg-gray-500 rounded hover:bg-gray-600"
@@ -209,16 +280,28 @@ export default function CargarProducto() {
           onChange={(e) => setBusqueda(e.target.value)}
           className="w-full p-2 border rounded md:w-1/3"
         />
-        <select onChange={(e) => setFiltroCategoria(e.target.value)} className="w-full p-2 border rounded md:w-1/3">
+        <select
+          onChange={(e) => setFiltroCategoria(e.target.value)}
+          className="w-full p-2 border rounded md:w-1/3"
+          value={filtroCategoria}
+        >
           <option value="">Todas las categorías</option>
           {[...new Set(productos.map((p) => p.categoria).filter(Boolean))].map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
           ))}
         </select>
-        <select onChange={(e) => setFiltroEstado(e.target.value)} className="w-full p-2 border rounded md:w-1/3">
+        <select
+          onChange={(e) => setFiltroEstado(e.target.value)}
+          className="w-full p-2 border rounded md:w-1/3"
+          value={filtroEstado}
+        >
           <option value="">Todos los estados</option>
           {estados.map((e) => (
-            <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
+            <option key={e} value={e}>
+              {e.charAt(0).toUpperCase() + e.slice(1)}
+            </option>
           ))}
         </select>
       </div>
@@ -227,7 +310,12 @@ export default function CargarProducto() {
         {productosFiltrados.map((p) => (
           <div key={p.id} className="flex gap-4 p-4 border rounded">
             {p.foto_url && (
-              <img src={p.foto_url} alt={p.nombre} className="object-cover w-24 h-24 rounded" />
+              <img
+                src={p.foto_url}
+                alt={p.nombre}
+                className="object-cover w-24 h-24 rounded"
+                loading="lazy"
+              />
             )}
             <div className="flex-1">
               <h4 className="text-lg font-bold">{p.nombre}</h4>
@@ -238,8 +326,20 @@ export default function CargarProducto() {
               <p className="text-sm">📌 Estado: {p.estado}</p>
 
               <div className="flex gap-2 mt-2">
-                <button onClick={() => handleEdit(p)} className="px-3 py-1 text-white bg-yellow-500 rounded">Editar</button>
-                <button onClick={() => handleDelete(p.id)} className="px-3 py-1 text-white bg-red-600 rounded">Eliminar</button>
+                <button
+                  onClick={() => handleEdit(p)}
+                  className="px-3 py-1 text-white bg-yellow-500 rounded"
+                  disabled={loading}
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="px-3 py-1 text-white bg-red-600 rounded"
+                  disabled={loading}
+                >
+                  Eliminar
+                </button>
               </div>
             </div>
           </div>

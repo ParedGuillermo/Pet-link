@@ -8,9 +8,17 @@ const provinciasArgentinas = [
   "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán",
 ];
 
-// Función para limpiar nombre de archivo
+// Limpia nombre archivo, manteniendo extensión en minúscula
 function sanitizeFileName(name) {
-  return name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
+  const nameWithoutExt = name.replace(/\.[^/.]+$/, "");
+  const extension = name.split('.').pop().toLowerCase();
+  return (
+    nameWithoutExt
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9._-]/g, "") +
+    "." +
+    extension
+  );
 }
 
 export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgregada }) {
@@ -36,7 +44,19 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "foto") {
-      setForm((prev) => ({ ...prev, foto: files[0] }));
+      if (files.length > 0) {
+        const file = files[0];
+        if (!file.type.startsWith("image/")) {
+          setError("Solo se permiten archivos de imagen.");
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB max
+          setError("La imagen debe ser menor a 5MB.");
+          return;
+        }
+        setError(null);
+        setForm((prev) => ({ ...prev, foto: file }));
+      }
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -56,8 +76,8 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
         const fileName = `${Date.now()}_${safeName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("pets")  // <-- Acá cambiamos a bucket "pets"
-          .upload(fileName, form.foto);
+          .from("pets")
+          .upload(fileName, form.foto, { cacheControl: "3600", upsert: false });
 
         setUploadingImage(false);
 
@@ -68,7 +88,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
         }
 
         const { data: publicUrlData } = supabase.storage
-          .from("pets") // <-- también acá
+          .from("pets")
           .getPublicUrl(fileName);
 
         foto_url = publicUrlData.publicUrl;
@@ -81,16 +101,16 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
       }
 
       const { error: insertError } = await supabase.from("mascotas").insert({
-        nombre: form.nombre,
-        especie: form.especie,
-        raza: form.raza || null,
+        nombre: form.nombre.trim(),
+        especie: form.especie.trim(),
+        raza: form.raza.trim() || null,
         edad: form.edad ? parseInt(form.edad) : null,
-        descripcion: form.descripcion || null,
+        descripcion: form.descripcion.trim() || null,
         provincia: form.provincia || null,
-        telefono: form.telefono,
+        telefono: form.telefono.trim(),
         sexo: form.sexo,
-        caracteristicas: form.caracteristicas || null,
-        cuidados_especiales: form.cuidados_especiales || null,
+        caracteristicas: form.caracteristicas.trim() || null,
+        cuidados_especiales: form.cuidados_especiales.trim() || null,
         estado: form.estado,
         foto_url,
         usuario_id: usuarioId,
@@ -99,6 +119,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
       if (insertError) {
         setError(`Error al insertar en la base de datos: ${insertError.message}`);
         console.error(insertError);
+        setLoading(false);
         return;
       }
 
@@ -114,47 +135,169 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       <div className="w-full max-w-lg p-6 bg-white rounded-lg shadow-lg overflow-auto max-h-[90vh] sm:max-w-md sm:h-auto md:max-w-2xl lg:max-w-3xl xl:max-w-4xl pb-16">
-        <h2 className="mb-4 text-xl font-semibold text-center">Registrar Mascota</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input name="nombre" placeholder="Nombre *" required value={form.nombre} onChange={handleChange} className="w-full p-2 border rounded" />
-          <input name="especie" placeholder="Especie (ej: perro, gato) *" required value={form.especie} onChange={handleChange} className="w-full p-2 border rounded" />
-          <input name="raza" placeholder="Raza" value={form.raza} onChange={handleChange} className="w-full p-2 border rounded" />
-          <input name="edad" type="number" min="0" placeholder="Edad" value={form.edad} onChange={handleChange} className="w-full p-2 border rounded" />
+        <h2 id="modal-title" className="mb-4 text-xl font-semibold text-center">
+          Registrar Mascota
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <input
+            name="nombre"
+            placeholder="Nombre *"
+            required
+            value={form.nombre}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            aria-required="true"
+          />
+          <input
+            name="especie"
+            placeholder="Especie (ej: perro, gato) *"
+            required
+            value={form.especie}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            aria-required="true"
+          />
+          <input
+            name="raza"
+            placeholder="Raza"
+            value={form.raza}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+          <input
+            name="edad"
+            type="number"
+            min="0"
+            placeholder="Edad"
+            value={form.edad}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
 
-          <select name="provincia" value={form.provincia} onChange={handleChange} className="w-full p-2 border rounded" required>
-            <option value="" disabled>Seleccioná una provincia *</option>
+          <select
+            name="provincia"
+            value={form.provincia}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
+            aria-required="true"
+          >
+            <option value="" disabled>
+              Seleccioná una provincia *
+            </option>
             {provinciasArgentinas.map((prov) => (
-              <option key={prov} value={prov}>{prov}</option>
+              <option key={prov} value={prov}>
+                {prov}
+              </option>
             ))}
           </select>
 
-          <input name="telefono" placeholder="Teléfono *" required value={form.telefono} onChange={handleChange} className="w-full p-2 border rounded" />
+          <input
+            name="telefono"
+            placeholder="Teléfono *"
+            required
+            value={form.telefono}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            aria-required="true"
+            inputMode="tel"
+            pattern="\d{6,15}"
+            title="Ingrese un número de teléfono válido sin espacios ni símbolos."
+          />
 
-          <select name="sexo" value={form.sexo} onChange={handleChange} className="w-full p-2 border rounded" required>
-            <option value="" disabled>Seleccioná el sexo *</option>
+          <select
+            name="sexo"
+            value={form.sexo}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
+            aria-required="true"
+          >
+            <option value="" disabled>
+              Seleccioná el sexo *
+            </option>
             <option value="macho">Macho</option>
             <option value="hembra">Hembra</option>
           </select>
 
-          <textarea name="caracteristicas" placeholder="Características" value={form.caracteristicas} onChange={handleChange} className="w-full p-2 border rounded" />
-          <textarea name="cuidados_especiales" placeholder="Cuidados especiales" value={form.cuidados_especiales} onChange={handleChange} className="w-full p-2 border rounded" />
-          <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="w-full p-2 border rounded" />
+          <textarea
+            name="caracteristicas"
+            placeholder="Características"
+            value={form.caracteristicas}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+          <textarea
+            name="cuidados_especiales"
+            placeholder="Cuidados especiales"
+            value={form.cuidados_especiales}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+          <textarea
+            name="descripcion"
+            placeholder="Descripción"
+            value={form.descripcion}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
 
-          <select name="estado" value={form.estado} onChange={handleChange} className="w-full p-2 border rounded" required>
+          <select
+            name="estado"
+            value={form.estado}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
+            aria-required="true"
+          >
             <option value="propia">Propia</option>
             <option value="en_adopcion">En adopción</option>
           </select>
 
-          <input type="file" name="foto" accept="image/*" onChange={handleChange} className="w-full" />
+          <input
+            type="file"
+            name="foto"
+            accept="image/*"
+            onChange={handleChange}
+            className="w-full"
+            aria-describedby="file-desc"
+          />
+          <p id="file-desc" className="mb-2 text-xs text-gray-500">
+            Tamaño máximo: 5MB. Solo imágenes.
+          </p>
 
-          {uploadingImage && <p className="text-sm text-blue-600">Subiendo imagen...</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {uploadingImage && (
+            <p className="text-sm text-blue-600" aria-live="polite">
+              Subiendo imagen...
+            </p>
+          )}
+          {error && (
+            <p className="text-sm text-red-500" aria-live="assertive">
+              {error}
+            </p>
+          )}
 
           <div className="flex justify-between mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-800 bg-gray-300 rounded hover:bg-gray-400" disabled={loading}>Cancelar</button>
-            <button type="submit" disabled={loading || uploadingImage} className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-800 bg-gray-300 rounded hover:bg-gray-400"
+              disabled={loading}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading || uploadingImage}
+              className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+            >
               {loading ? "Guardando..." : "Guardar Mascota"}
             </button>
           </div>

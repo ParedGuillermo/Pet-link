@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
@@ -28,12 +27,16 @@ import SuccessStories from "./components/SuccessStories";
 
 // NUEVAS IMPORTACIONES
 import Donaciones from "./pages/Donaciones";
-import RegistrarOrganizacion from "./pages/RegistrarOrganizacion";
+import RegistrarOrganizacion from "./pages/RegistrarOrganizacion"; // Verifica que este archivo exista
+
+// CORREGIDO: Importación del componente DonacionDetalles
+import DonacionDetalles from "./components/DonacionDetalles"; // Importa correctamente el componente
 
 import BottomNav from "./components/BottomNav";
 import { CartProvider } from "./components/CartContext";
 import CartModal from "./components/CartModal";
 
+// Componente protegido para usuarios autenticados
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useAuth();
   return isLoggedIn ? children : <Navigate to="/login" replace />;
@@ -63,8 +66,9 @@ export default function App() {
               <Route path="/nosotros" element={<Nosotros />} /> {/* Ruta corregida */}
 
               {/* NUEVAS RUTAS */}
-              <Route path="/donaciones" element={<Donaciones />} />
-              <Route path="/registrar-organizacion" element={<RegistrarOrganizacion />} />
+              <Route path="/donaciones" element={<Donaciones />} /> {/* Donaciones */}
+              <Route path="/registrar-organizacion" element={<RegistrarOrganizacion />} /> {/* Registrar organización */}
+              <Route path="/donacion-detalles/:id" element={<DonacionDetalles />} /> {/* Detalles de la organización */}
 
               {/* Páginas protegidas */}
               <Route

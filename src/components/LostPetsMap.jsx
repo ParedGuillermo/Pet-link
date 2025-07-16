@@ -30,8 +30,9 @@ export default function LostPetsMap() {
 
       if (error) {
         console.error("Error cargando avistamientos", error);
+        setAvistamientos([]);
       } else {
-        setAvistamientos(data);
+        setAvistamientos(data || []);
       }
       setLoading(false);
     };
@@ -39,15 +40,23 @@ export default function LostPetsMap() {
     fetchAvistamientos();
   }, []);
 
+  const centroInicial = [-27.4748, -58.8341]; // Corrientes Capital
+
   return (
-    <div className="h-screen">
+    <div className="w-full h-screen">
       {loading ? (
         <p className="p-4 text-center text-gray-500">Cargando mapa...</p>
+      ) : avistamientos.length === 0 ? (
+        <p className="p-4 text-center text-gray-600">
+          No hay mascotas perdidas reportadas por ahora.
+        </p>
       ) : (
         <MapContainer
-          center={[-27.4748, -58.8341]} // Corrientes Capital
+          center={centroInicial}
           zoom={13}
-          scrollWheelZoom
+          minZoom={10}
+          maxZoom={18}
+          scrollWheelZoom={true}
           className="z-0 w-full h-full"
         >
           <TileLayer
@@ -55,25 +64,35 @@ export default function LostPetsMap() {
             attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
           />
 
-          {avistamientos.length === 0 ? null : avistamientos.map((mascota) => {
-            const [lat, lng] = mascota.ubicacion?.split(",").map(Number) || [];
-            if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
+          {avistamientos.map((mascota) => {
+            const coords = mascota.ubicacion?.split(",").map((c) => parseFloat(c.trim()));
+            if (
+              !coords ||
+              coords.length !== 2 ||
+              coords.some((v) => isNaN(v))
+            ) return null;
+
+            const [lat, lng] = coords;
 
             return (
               <Marker key={mascota.id} position={[lat, lng]}>
-                <Popup>
-                  <div className="text-sm max-w-[200px]">
+                <Popup className="max-w-xs p-3">
+                  <div className="text-sm">
                     <strong>{mascota.nombre}</strong> ({mascota.tipo_mascota})<br />
                     <span className="text-xs italic text-gray-600">
                       {mascota.color} - {mascota.raza}
-                    </span><br />
+                    </span>
                     <p className="mt-1 text-xs text-gray-800">{mascota.descripcion}</p>
-                    <p className="mt-2 text-xs"><strong>Contacto:</strong> {mascota.contacto}</p>
+                    <p className="mt-2 text-xs">
+                      <strong>Contacto:</strong> {mascota.contacto}
+                      {/* Podrías agregar un botón para copiar contacto aquí */}
+                    </p>
                     {mascota.foto_url && (
                       <img
                         src={mascota.foto_url}
-                        alt={mascota.nombre}
+                        alt={`Foto de ${mascota.nombre}`}
                         className="w-full mt-2 rounded shadow-sm"
+                        loading="lazy"
                       />
                     )}
                   </div>

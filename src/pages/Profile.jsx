@@ -32,6 +32,7 @@ export default function Profile() {
 
     setLoading(true);
 
+    // Obtener datos de perfil
     const { data: profile, error: profileError } = await supabase
       .from("usuarios")
       .select("*")
@@ -48,6 +49,7 @@ export default function Profile() {
 
     setProfileData(profile);
 
+    // Setear los datos en el formulario
     setFormData({
       nombre: profile.nombre || "",
       apellido: profile.apellido || "",
@@ -57,6 +59,7 @@ export default function Profile() {
       provincia: profile.provincia || "",
     });
 
+    // Obtener las mascotas del usuario
     const { data: mascotasData, error: mascotasError } = await supabase
       .from("mascotas")
       .select("*")

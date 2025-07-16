@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../components/CartContext";
 
+// Importa todos los íconos correctamente
 import menuIcon from "../assets/home/menu-de-hamburguesa-icon.png";
 import homeIcon from "../assets/home/home-icon.png";
 import tiendaIcon from "../assets/home/tienda-icon.png";
@@ -27,18 +28,21 @@ export default function BottomNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuView, setMenuView] = useState("sections"); // 'sections' | 'cart'
 
+  const menuRef = useRef(null);
+
+  // Definimos las secciones del menú
   const sections = [
     { name: "Inicio", path: "/", icon: homeIcon },
     { name: "Tienda", path: "/productos", icon: tiendaIcon },
     { name: "Escanear QR", path: "/scan", icon: qrIcon },
     { name: "Perfil", path: "/profile", icon: perfilIcon },
-    // Aquí corregimos la ruta para que funcione correctamente con LostPets y abra el modal
     { name: "Reportar Pérdida", path: "/mascotas-perdidas?reportar=true", icon: reportlostIcon },
     { name: "Mascotas Perdidas", path: "/mascotas-perdidas", icon: perdidaIcon },
     { name: "Adopciones", path: "/adopciones", icon: adopcionIcon },
     { name: "Pet Society", path: "/pet-society", icon: petSocietyIcon },
   ];
 
+  // Añadimos opciones administrativas si el usuario es admin
   if (isLoggedIn && user?.email === "walterguillermopared@gmail.com") {
     sections.push({ name: "Administrar QR", path: "/administrar-qr", icon: administrarQRIcon });
     sections.push({ name: "Panel Admin", path: "/admin", icon: adminIcon });
@@ -46,26 +50,51 @@ export default function BottomNav() {
     sections.push({ name: "Cargar Producto", path: "/cargar-producto", icon: agregarIcon });
   }
 
-  function openMenuSections() {
+  // Maneja cierre del menú con tecla ESC y enfoque automático
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") setIsMenuOpen(false);
+    }
+    if (isMenuOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      menuRef.current?.focus();
+    } else {
+      document.removeEventListener("keydown", handleKeyDown);
+    }
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMenuOpen]);
+
+  // Abre menú en modo secciones
+  const openMenuSections = () => {
     setMenuView("sections");
     setIsMenuOpen(true);
-  }
+  };
 
-  function openMenuCart() {
+  // Abre menú en modo carrito
+  const openMenuCart = () => {
     setMenuView("cart");
     setIsMenuOpen(true);
-  }
+  };
 
-  function closeMenu() {
+  // Cierra menú y resetea vista a secciones
+  const closeMenu = () => {
     setIsMenuOpen(false);
     setMenuView("sections");
-  }
+  };
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-between px-6 py-2 bg-white shadow-inner md:justify-around">
+      {/* Navegación inferior fija */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 flex justify-between px-6 py-2 bg-white shadow-inner md:justify-around"
+        role="navigation"
+        aria-label="Navegación inferior"
+      >
+        {/* Botón menú */}
         <button
           onClick={openMenuSections}
+          aria-expanded={isMenuOpen && menuView === "sections"}
+          aria-controls="bottom-menu"
           className="flex flex-col items-center justify-center text-gray-700 transition hover:scale-110"
           aria-label="Abrir menú"
           type="button"
@@ -74,6 +103,7 @@ export default function BottomNav() {
           <span className="text-xs">Menú</span>
         </button>
 
+        {/* Botón carrito */}
         <button
           onClick={openMenuCart}
           className="relative flex flex-col items-center justify-center text-gray-700 transition hover:scale-110"
@@ -104,6 +134,7 @@ export default function BottomNav() {
           <span className="text-xs">Carrito</span>
         </button>
 
+        {/* Botón perfil */}
         {isLoggedIn && (
           <button
             onClick={() => {
@@ -120,6 +151,7 @@ export default function BottomNav() {
         )}
       </nav>
 
+      {/* Fondo oscuro para el menú cuando está abierto */}
       {isMenuOpen && (
         <div
           onClick={closeMenu}
@@ -128,7 +160,11 @@ export default function BottomNav() {
         />
       )}
 
+      {/* Contenedor del menú inferior */}
       <div
+        id="bottom-menu"
+        ref={menuRef}
+        tabIndex={-1}
         className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-lg transform transition-transform duration-300 ${
           isMenuOpen ? "translate-y-0" : "translate-y-full"
         }`}
@@ -145,6 +181,7 @@ export default function BottomNav() {
             {menuView === "sections" ? "📱 Menú rápido" : "🛒 Tu carrito"}
           </h3>
 
+          {/* Vista de secciones o carrito */}
           {menuView === "sections" ? (
             <div className="grid grid-cols-3 gap-4">
               {sections.map(({ name, path, icon }) => (
@@ -167,6 +204,7 @@ export default function BottomNav() {
             <CartModal onClose={closeMenu} />
           )}
 
+          {/* Botón cerrar menú */}
           <button
             onClick={closeMenu}
             className="w-full py-2 mt-6 text-white transition bg-red-500 rounded hover:bg-red-600"

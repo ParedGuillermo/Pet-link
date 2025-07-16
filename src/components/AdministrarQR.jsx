@@ -5,40 +5,41 @@ export default function AdministrarQR() {
   const [mascotas, setMascotas] = useState([]);
   const [codigosQR, setCodigosQR] = useState([]);
   const [codigosUsados, setCodigosUsados] = useState([]);
-  const [mascotaSeleccionada, setMascotaSeleccionada] = useState(null);
-  const [codigoSeleccionado, setCodigoSeleccionado] = useState(null);
+  const [mascotaSeleccionada, setMascotaSeleccionada] = useState("");
+  const [codigoSeleccionado, setCodigoSeleccionado] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMascotas = async () => {
-      const { data, error } = await supabase.from("mascotas").select("*");
-      if (error) {
-        console.error("Error al traer mascotas:", error.message);
-      } else {
-        setMascotas(data);
-        const usados = data
+    async function fetchData() {
+      setLoading(true);
+      try {
+        // Mascotas
+        const { data: mascotasData, error: errorMascotas } = await supabase
+          .from("mascotas")
+          .select("*");
+        if (errorMascotas) throw errorMascotas;
+        setMascotas(mascotasData || []);
+
+        // Códigos QR
+        const { data: codigosData, error: errorCodigos } = await supabase
+          .storage
+          .from("productos")
+          .list("codigos-qr", { limit: 100 });
+        if (errorCodigos) throw errorCodigos;
+        setCodigosQR(codigosData || []);
+
+        // Códigos usados
+        const usados = (mascotasData || [])
           .map((m) => m.codigo_qr_url)
-          .filter((c) => c !== null && c !== "");
+          .filter((c) => c && c.trim() !== "");
         setCodigosUsados(usados);
+      } catch (error) {
+        console.error("Error al cargar datos:", error.message);
+      } finally {
+        setLoading(false);
       }
-    };
-
-    const fetchCodigosQR = async () => {
-      const { data, error } = await supabase
-        .storage
-        .from("productos")
-        .list("codigos-qr", { limit: 100 });
-
-      if (error) {
-        console.error("Error al traer códigos QR:", error.message);
-      } else {
-        setCodigosQR(data);
-      }
-    };
-
-    fetchMascotas();
-    fetchCodigosQR();
-    setLoading(false);
+    }
+    fetchData();
   }, []);
 
   const handleAsignarQR = async () => {
@@ -47,27 +48,34 @@ export default function AdministrarQR() {
       return;
     }
 
-    const { error } = await supabase
-      .from("mascotas")
-      .update({ codigo_qr_url: codigoSeleccionado })
-      .eq("id", mascotaSeleccionada);
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("mascotas")
+        .update({ codigo_qr_url: codigoSeleccionado })
+        .eq("id", mascotaSeleccionada);
+      if (error) throw error;
 
-    if (error) {
-      console.error("Error al asignar código QR:", error.message);
-    } else {
       alert("Código QR asignado correctamente");
-      setCodigoSeleccionado(null);
-      setMascotaSeleccionada(null);
+      setMascotaSeleccionada("");
+      setCodigoSeleccionado("");
 
-      // Refrescar datos
-      const { data: mascotasActualizadas } = await supabase
+      // Refrescar mascotas y códigos usados
+      const { data: mascotasActualizadas, error: errorMascotas } = await supabase
         .from("mascotas")
         .select("*");
-      setMascotas(mascotasActualizadas);
-      const usados = mascotasActualizadas
+      if (errorMascotas) throw errorMascotas;
+      setMascotas(mascotasActualizadas || []);
+
+      const usados = (mascotasActualizadas || [])
         .map((m) => m.codigo_qr_url)
-        .filter((c) => c !== null && c !== "");
+        .filter((c) => c && c.trim() !== "");
       setCodigosUsados(usados);
+    } catch (error) {
+      alert("Error al asignar código QR: " + error.message);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,89 +88,115 @@ export default function AdministrarQR() {
   );
 
   return (
-    <div className="min-h-screen p-4 pb-24 bg-purple-50">
-      <h1 className="mb-4 text-3xl font-bold text-center text-purple-800">
+    <div className="min-h-screen p-6 pb-24 bg-purple-50">
+      <h1 className="mb-6 text-3xl font-bold text-center text-purple-800">
         Asignar Código QR a Mascota
       </h1>
 
       {loading ? (
         <p className="text-center text-gray-600">Cargando datos...</p>
       ) : (
-        <div className="space-y-6">
-          {/* Selección de mascota */}
-          <div className="flex flex-col mb-6">
-            <label className="mb-2 text-lg font-semibold text-purple-700">
-              Selecciona una mascota
-            </label>
-            <select
-              value={mascotaSeleccionada || ""}
-              onChange={(e) => setMascotaSeleccionada(e.target.value)}
-              className="p-2 border rounded"
+        <>
+          <div className="max-w-md mx-auto space-y-6">
+            {/* Selección de mascota */}
+            <div>
+              <label
+                htmlFor="mascota-select"
+                className="block mb-2 text-lg font-semibold text-purple-700"
+              >
+                Selecciona una mascota
+              </label>
+              <select
+                id="mascota-select"
+                value={mascotaSeleccionada}
+                onChange={(e) => setMascotaSeleccionada(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+              >
+                <option value="">Seleccionar mascota</option>
+                {mascotas.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Selección de código QR */}
+            <div>
+              <label
+                htmlFor="codigo-select"
+                className="block mb-2 text-lg font-semibold text-purple-700"
+              >
+                Selecciona un código QR
+              </label>
+              <select
+                id="codigo-select"
+                value={codigoSeleccionado}
+                onChange={(e) => setCodigoSeleccionado(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+              >
+                <option value="">Seleccionar código QR</option>
+                {codigosDisponibles.length === 0 && (
+                  <option disabled>No hay códigos QR disponibles</option>
+                )}
+                {codigosDisponibles.map((codigo) => (
+                  <option key={codigo.name} value={codigo.name}>
+                    {codigo.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Botón para asignar */}
+            <button
+              onClick={handleAsignarQR}
+              disabled={!mascotaSeleccionada || !codigoSeleccionado || loading}
+              className={`w-full px-6 py-3 text-white rounded ${
+                !mascotaSeleccionada || !codigoSeleccionado || loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              } transition`}
+              aria-disabled={!mascotaSeleccionada || !codigoSeleccionado || loading}
             >
-              <option value="">Seleccionar mascota</option>
-              {mascotas.map((mascota) => (
-                <option key={mascota.id} value={mascota.id}>
-                  {mascota.nombre}
-                </option>
-              ))}
-            </select>
+              {loading ? "Procesando..." : "Asignar Código QR"}
+            </button>
           </div>
 
-          {/* Selección de código QR */}
-          <div className="flex flex-col mb-6">
-            <label className="mb-2 text-lg font-semibold text-purple-700">
-              Selecciona un código QR
-            </label>
-            <select
-              value={codigoSeleccionado || ""}
-              onChange={(e) => setCodigoSeleccionado(e.target.value)}
-              className="p-2 border rounded"
-            >
-              <option value="">Seleccionar código QR</option>
-              {codigosDisponibles.map((codigo) => (
-                <option key={codigo.name} value={codigo.name}>
-                  {codigo.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Botón para asignar */}
-          <button
-            onClick={handleAsignarQR}
-            className="px-6 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
-            disabled={!mascotaSeleccionada || !codigoSeleccionado}
-          >
-            Asignar Código QR
-          </button>
-
-          {/* Mostrar todos los códigos ya asignados con sus mascotas */}
-          <div className="mt-12">
-            <h2 className="mb-4 text-2xl font-bold text-purple-800">
+          {/* Mostrar códigos asignados */}
+          <section className="max-w-5xl mx-auto mt-12">
+            <h2 className="mb-6 text-2xl font-bold text-purple-800">
               Códigos QR asignados
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-              {mascotasConQR.map((mascota) => (
-                <div
-                  key={mascota.id}
-                  className="p-4 bg-white rounded shadow"
-                >
-                  <h3 className="text-lg font-semibold text-purple-700">
-                    {mascota.nombre}
-                  </h3>
-                  <img
-                    src={`https://zcoekpdxfbnooopsrrec.supabase.co/storage/v1/object/public/productos/codigos-qr/${mascota.codigo_qr_url}`}
-                    alt={`QR de ${mascota.nombre}`}
-                    className="w-24 h-24 mt-2 rounded"
-                  />
-                  <p className="mt-2 text-sm text-gray-500">
-                    {mascota.codigo_qr_url}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+
+            {mascotasConQR.length === 0 ? (
+              <p className="text-center text-gray-600">
+                No hay códigos QR asignados todavía.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                {mascotasConQR.map((mascota) => (
+                  <div
+                    key={mascota.id}
+                    className="flex flex-col items-center p-4 bg-white rounded shadow"
+                  >
+                    <h3 className="mb-2 text-lg font-semibold text-center text-purple-700">
+                      {mascota.nombre}
+                    </h3>
+                    <img
+                      src={`https://zcoekpdxfbnooopsrrec.supabase.co/storage/v1/object/public/productos/codigos-qr/${mascota.codigo_qr_url}`}
+                      alt={`QR de ${mascota.nombre}`}
+                      className="rounded w-28 h-28"
+                      loading="lazy"
+                    />
+                    <p className="max-w-full mt-2 text-sm text-gray-500 truncate">
+                      {mascota.codigo_qr_url}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       )}
     </div>
   );

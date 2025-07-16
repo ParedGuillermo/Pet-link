@@ -19,33 +19,54 @@ export default function EsencialesCarousel() {
     fetchProductos();
   }, []);
 
+  const handleNavigate = (id) => {
+    navigate(`/productos/${id}`);
+  };
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
+    <section aria-label="Productos Esenciales">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Productos Esenciales</h2>
         <button
           onClick={() => navigate("/productos")}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-blue-600 hover:underline focus:outline-none focus:ring-1 focus:ring-blue-400"
         >
           Ver más →
         </button>
       </div>
-      <div className="flex overflow-x-auto space-x-4 pb-2">
+
+      <div
+        className="flex pb-2 space-x-4 overflow-x-auto"
+        role="list"
+        aria-label="Listado de productos esenciales"
+      >
         {productos.map((p) => (
-          <div
+          <article
             key={p.id}
-            className="min-w-[160px] bg-white shadow rounded-lg p-3"
+            role="listitem"
+            tabIndex={0}
+            onClick={() => handleNavigate(p.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleNavigate(p.id);
+            }}
+            className="min-w-[160px] bg-white shadow rounded-lg p-3 cursor-pointer hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <img
-              src={p.foto_url}
+              src={p.foto_url || "/placeholder-image.png"}
               alt={p.nombre}
-              className="w-full h-28 object-cover rounded mb-2"
+              className="object-cover w-full mb-2 rounded h-28"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.src = "/placeholder-image.png";
+              }}
             />
-            <p className="font-semibold text-sm">{p.nombre}</p>
-            <p className="text-xs text-gray-500">${p.precio}</p>
-          </div>
+            <p className="text-sm font-semibold">{p.nombre}</p>
+            <p className="text-xs text-gray-500">
+              ${Number(p.precio).toFixed(2)}
+            </p>
+          </article>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

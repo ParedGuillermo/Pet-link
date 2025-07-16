@@ -34,7 +34,19 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "foto") {
-      setForm((prev) => ({ ...prev, foto: files[0] }));
+      if (files.length > 0) {
+        const file = files[0];
+        if (!file.type.startsWith("image/")) {
+          setError("Solo se permiten archivos de imagen.");
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          setError("La imagen debe ser menor a 5MB.");
+          return;
+        }
+        setError(null);
+        setForm((prev) => ({ ...prev, foto: file }));
+      }
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -44,6 +56,12 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
     e.preventDefault();
     if (!usuarioId) {
       setError("Debés iniciar sesión para reportar una mascota.");
+      return;
+    }
+
+    // Validar campos obligatorios
+    if (!form.nombre || !form.especie || !form.provincia || !form.telefono) {
+      setError("Por favor, completá todos los campos obligatorios.");
       return;
     }
 
@@ -84,7 +102,7 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
         descripcion: form.descripcion || null,
         provincia: form.provincia || null,
         telefono: form.telefono,
-        sexo: form.sexo,
+        sexo: form.sexo || null,
         caracteristicas: form.caracteristicas || null,
         cuidados_especiales: form.cuidados_especiales || null,
         estado: "reportada",
@@ -97,6 +115,21 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
         setLoading(false);
         return;
       }
+
+      // Opcional: resetear form
+      setForm({
+        nombre: "",
+        especie: "",
+        raza: "",
+        edad: "",
+        descripcion: "",
+        provincia: "",
+        telefono: "",
+        sexo: "",
+        caracteristicas: "",
+        cuidados_especiales: "",
+        foto: null,
+      });
 
       if (onMascotaReportada) onMascotaReportada();
       onClose();
@@ -124,41 +157,130 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
         <h2 className="mb-4 text-2xl font-bold text-center text-blue-700">🐾 Reportar Mascota Perdida</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-sm text-gray-800">
-          <input name="nombre" placeholder="Nombre *" required value={form.nombre} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
-          <input name="especie" placeholder="Especie (perro, gato) *" required value={form.especie} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
-          <input name="raza" placeholder="Raza" value={form.raza} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
-          <input name="edad" type="number" min="0" placeholder="Edad" value={form.edad} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
+          <input
+            name="nombre"
+            placeholder="Nombre *"
+            required
+            value={form.nombre}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          />
+          <input
+            name="especie"
+            placeholder="Especie (perro, gato) *"
+            required
+            value={form.especie}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          />
+          <input
+            name="raza"
+            placeholder="Raza"
+            value={form.raza}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          />
+          <input
+            name="edad"
+            type="number"
+            min="0"
+            placeholder="Edad"
+            value={form.edad}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          />
 
-          <select name="provincia" value={form.provincia} onChange={handleChange} required className="w-full p-3 border rounded-lg shadow-sm">
+          <select
+            name="provincia"
+            value={form.provincia}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg shadow-sm"
+          >
             <option value="">Seleccioná una provincia *</option>
             {provinciasArgentinas.map((prov) => (
-              <option key={prov} value={prov}>{prov}</option>
+              <option key={prov} value={prov}>
+                {prov}
+              </option>
             ))}
           </select>
 
-          <input name="telefono" placeholder="Teléfono *" required value={form.telefono} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
+          <input
+            name="telefono"
+            placeholder="Teléfono *"
+            required
+            value={form.telefono}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+            inputMode="tel"
+          />
 
-          <select name="sexo" value={form.sexo} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm">
+          <select
+            name="sexo"
+            value={form.sexo}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          >
             <option value="">Seleccioná el sexo</option>
             <option value="macho">Macho</option>
             <option value="hembra">Hembra</option>
-            <option value="disponible">Disponible</option>
           </select>
 
-          <textarea name="caracteristicas" placeholder="Características" value={form.caracteristicas} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
-          <textarea name="cuidados_especiales" placeholder="Cuidados especiales" value={form.cuidados_especiales} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
-          <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="w-full p-3 border rounded-lg shadow-sm" />
+          <textarea
+            name="caracteristicas"
+            placeholder="Características"
+            value={form.caracteristicas}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          />
+          <textarea
+            name="cuidados_especiales"
+            placeholder="Cuidados especiales"
+            value={form.cuidados_especiales}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          />
+          <textarea
+            name="descripcion"
+            placeholder="Descripción"
+            value={form.descripcion}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          />
 
-          <input type="file" name="foto" accept="image/*" onChange={handleChange} className="w-full" />
+          <input
+            type="file"
+            name="foto"
+            accept="image/*"
+            onChange={handleChange}
+            className="w-full"
+          />
 
-          {uploadingImage && <p className="text-sm text-blue-600">Subiendo imagen...</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {uploadingImage && (
+            <p className="text-sm text-blue-600" aria-live="polite">
+              Subiendo imagen...
+            </p>
+          )}
+          {error && (
+            <p className="text-sm text-red-500" aria-live="polite">
+              {error}
+            </p>
+          )}
 
           <div className="flex justify-between mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300" disabled={loading}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300"
+              disabled={loading}
+            >
               Cancelar
             </button>
-            <button type="submit" disabled={loading || uploadingImage} className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            <button
+              type="submit"
+              disabled={loading || uploadingImage}
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
               {loading ? "Reportando..." : "Reportar Mascota"}
             </button>
           </div>
