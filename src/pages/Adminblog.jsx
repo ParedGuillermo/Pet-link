@@ -1,4 +1,3 @@
-// src/pages/AdminBlog.jsx
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
@@ -10,24 +9,29 @@ export default function AdminBlog() {
   const isAdmin = user?.email === "walterguillermopared@gmail.com";
 
   const [entradas, setEntradas] = useState([]);
-  const [testimonios, setTestimonios] = useState([]);  // Nuevo estado para testimonios
+  const [testimonios, setTestimonios] = useState([]);
+  const [adopciones, setAdopciones] = useState([]); // Nuevo estado para adopciones
   const [editing, setEditing] = useState(null);
   const [newEntry, setNewEntry] = useState({
     titulo: "",
     categoria: "Entrenamiento",
     contenido: "",
     imagen_url: "",
-    autor: user?.email || "Admin"
+    autor: user?.email || "Admin",
   });
 
   useEffect(() => {
     if (!isAdmin) return navigate("/");
     fetchEntradas();
-    fetchTestimonios();  // Recuperamos testimonios
+    fetchTestimonios();
+    fetchAdopciones(); // Cargar adopciones
   }, [user]);
 
   const fetchEntradas = async () => {
-    const { data, error } = await supabase.from("entradas_blog").select("*").order("creado_en", { ascending: false });
+    const { data, error } = await supabase
+      .from("entradas_blog")
+      .select("*")
+      .order("creado_en", { ascending: false });
     if (!error) setEntradas(data);
   };
 
@@ -35,18 +39,35 @@ export default function AdminBlog() {
     const { data, error } = await supabase
       .from("entradas_blog")
       .select("*")
-      .eq("categoria", "Testimonios")  // Filtramos por testimonios
+      .eq("categoria", "Testimonios")
       .order("creado_en", { ascending: false });
 
     if (!error) setTestimonios(data);
   };
 
+  const fetchAdopciones = async () => {
+    const { data, error } = await supabase
+      .from("entradas_blog")
+      .select("*")
+      .eq("categoria", "Adopciones")
+      .order("creado_en", { ascending: false });
+
+    if (!error) setAdopciones(data);
+  };
+
   const handleSave = async () => {
     const { error } = await supabase.from("entradas_blog").insert([newEntry]);
     if (!error) {
-      setNewEntry({ titulo: "", categoria: "Entrenamiento", contenido: "", imagen_url: "", autor: user?.email });
+      setNewEntry({
+        titulo: "",
+        categoria: "Entrenamiento",
+        contenido: "",
+        imagen_url: "",
+        autor: user?.email,
+      });
       fetchEntradas();
-      fetchTestimonios();  // Volver a cargar los testimonios
+      fetchTestimonios();
+      fetchAdopciones();
     }
   };
 
@@ -54,7 +75,8 @@ export default function AdminBlog() {
     if (!confirm("¿Eliminar esta entrada?")) return;
     await supabase.from("entradas_blog").delete().eq("id", id);
     fetchEntradas();
-    fetchTestimonios();  // Volver a cargar los testimonios después de eliminar
+    fetchTestimonios();
+    fetchAdopciones();
   };
 
   const handleUpdate = async () => {
@@ -62,7 +84,8 @@ export default function AdminBlog() {
     await supabase.from("entradas_blog").update(rest).eq("id", id);
     setEditing(null);
     fetchEntradas();
-    fetchTestimonios();  // Volver a cargar los testimonios después de editar
+    fetchTestimonios();
+    fetchAdopciones();
   };
 
   return (
@@ -81,7 +104,9 @@ export default function AdminBlog() {
         />
         <select
           value={newEntry.categoria}
-          onChange={(e) => setNewEntry({ ...newEntry, categoria: e.target.value })}
+          onChange={(e) =>
+            setNewEntry({ ...newEntry, categoria: e.target.value })
+          }
           className="w-full p-2 mb-2 border rounded"
         >
           <option>Entrenamiento</option>
@@ -89,7 +114,8 @@ export default function AdminBlog() {
           <option>Historias</option>
           <option>Recursos</option>
           <option>Salud</option>
-          <option>Testimonios</option> {/* Nueva categoría para testimonios */}
+          <option>Testimonios</option>
+          <option>Adopciones</option> {/* Nueva categoría agregada */}
         </select>
         <textarea
           placeholder="Contenido"
@@ -114,7 +140,7 @@ export default function AdminBlog() {
       </section>
 
       {/* Sección de testimonios */}
-      <section className="space-y-4">
+      <section className="mb-6 space-y-4">
         <h2 className="text-xl font-semibold">🗂 Testimonios</h2>
         {testimonios.map((testimonio) => (
           <div key={testimonio.id} className="p-4 bg-white rounded shadow">
@@ -139,8 +165,15 @@ export default function AdminBlog() {
                   className="w-full p-2 mb-2 border rounded"
                 />
                 <div className="flex gap-2 mt-2">
-                  <button onClick={handleUpdate} className="px-3 py-1 text-white bg-green-600 rounded">Guardar</button>
-                  <button onClick={() => setEditing(null)} className="px-3 py-1 text-white bg-gray-400 rounded">Cancelar</button>
+                  <button onClick={handleUpdate} className="px-3 py-1 text-white bg-green-600 rounded">
+                    Guardar
+                  </button>
+                  <button
+                    onClick={() => setEditing(null)}
+                    className="px-3 py-1 text-white bg-gray-400 rounded"
+                  >
+                    Cancelar
+                  </button>
                 </div>
               </>
             ) : (
@@ -156,8 +189,87 @@ export default function AdminBlog() {
                   />
                 )}
                 <div className="flex gap-2 mt-3">
-                  <button onClick={() => setEditing(testimonio)} className="text-sm text-blue-600">Editar</button>
-                  <button onClick={() => handleDelete(testimonio.id)} className="text-sm text-red-600">Eliminar</button>
+                  <button
+                    onClick={() => setEditing(testimonio)}
+                    className="text-sm text-blue-600"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(testimonio.id)}
+                    className="text-sm text-red-600"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </section>
+
+      {/* Sección de adopciones */}
+      <section className="mb-6 space-y-4">
+        <h2 className="text-xl font-semibold">🐾 Adopciones</h2>
+        {adopciones.map((adopcion) => (
+          <div key={adopcion.id} className="p-4 bg-white rounded shadow">
+            {editing?.id === adopcion.id ? (
+              <>
+                <input
+                  type="text"
+                  value={editing.titulo}
+                  onChange={(e) => setEditing({ ...editing, titulo: e.target.value })}
+                  className="w-full p-2 mb-2 border rounded"
+                />
+                <textarea
+                  value={editing.contenido}
+                  onChange={(e) => setEditing({ ...editing, contenido: e.target.value })}
+                  className="w-full p-2 mb-2 border rounded"
+                  rows={4}
+                />
+                <input
+                  type="text"
+                  value={editing.imagen_url}
+                  onChange={(e) => setEditing({ ...editing, imagen_url: e.target.value })}
+                  className="w-full p-2 mb-2 border rounded"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button onClick={handleUpdate} className="px-3 py-1 text-white bg-green-600 rounded">
+                    Guardar
+                  </button>
+                  <button
+                    onClick={() => setEditing(null)}
+                    className="px-3 py-1 text-white bg-gray-400 rounded"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold">{adopcion.titulo}</h3>
+                <p className="text-sm text-gray-600">{adopcion.categoria}</p>
+                <p className="mt-1 text-sm">{adopcion.contenido?.slice(0, 200)}...</p>
+                {adopcion.imagen_url && (
+                  <img
+                    src={adopcion.imagen_url}
+                    alt="Ilustración"
+                    className="w-full mt-2 rounded"
+                  />
+                )}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => setEditing(adopcion)}
+                    className="text-sm text-blue-600"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(adopcion.id)}
+                    className="text-sm text-red-600"
+                  >
+                    Eliminar
+                  </button>
                 </div>
               </>
             )}
@@ -191,8 +303,15 @@ export default function AdminBlog() {
                   className="w-full p-2 mb-2 border rounded"
                 />
                 <div className="flex gap-2 mt-2">
-                  <button onClick={handleUpdate} className="px-3 py-1 text-white bg-green-600 rounded">Guardar</button>
-                  <button onClick={() => setEditing(null)} className="px-3 py-1 text-white bg-gray-400 rounded">Cancelar</button>
+                  <button onClick={handleUpdate} className="px-3 py-1 text-white bg-green-600 rounded">
+                    Guardar
+                  </button>
+                  <button
+                    onClick={() => setEditing(null)}
+                    className="px-3 py-1 text-white bg-gray-400 rounded"
+                  >
+                    Cancelar
+                  </button>
                 </div>
               </>
             ) : (
@@ -208,8 +327,12 @@ export default function AdminBlog() {
                   />
                 )}
                 <div className="flex gap-2 mt-3">
-                  <button onClick={() => setEditing(entrada)} className="text-sm text-blue-600">Editar</button>
-                  <button onClick={() => handleDelete(entrada.id)} className="text-sm text-red-600">Eliminar</button>
+                  <button onClick={() => setEditing(entrada)} className="text-sm text-blue-600">
+                    Editar
+                  </button>
+                  <button onClick={() => handleDelete(entrada.id)} className="text-sm text-red-600">
+                    Eliminar
+                  </button>
                 </div>
               </>
             )}

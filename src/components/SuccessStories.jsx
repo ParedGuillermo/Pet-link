@@ -4,26 +4,26 @@ import { supabase } from '../supabaseClient';
 
 export default function SuccessStories({ summary = false, showHeader = true }) {
   const navigate = useNavigate();
-  const [testimonios, setTestimonios] = useState([]);
+  const [adopciones, setAdopciones] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTestimonios = async () => {
+    const fetchAdopciones = async () => {
       setLoading(true);
-      const { data: testimoniosData, error: testimoniosError } = await supabase
+      const { data, error } = await supabase
         .from('entradas_blog')
         .select('titulo, contenido, autor')
-        .eq('categoria', 'Testimonios')
+        .eq('categoria', 'Adopciones')
         .order('creado_en', { ascending: false });
 
-      if (testimoniosError) {
-        console.error('Error al cargar testimonios:', testimoniosError.message);
+      if (error) {
+        console.error('Error al cargar adopciones:', error.message);
         setLoading(false);
         return;
       }
 
       // Obtener correos únicos
-      const autoresUnicos = [...new Set(testimoniosData.map(t => t.autor))];
+      const autoresUnicos = [...new Set(data.map(t => t.autor))];
 
       // Consultar apodos de esos autores en una sola query
       const { data: usuariosData, error: usuariosError } = await supabase
@@ -44,49 +44,49 @@ export default function SuccessStories({ summary = false, showHeader = true }) {
       });
 
       // Reemplazar autor por apodo si existe
-      const testimoniosConApodo = testimoniosData.map(t => ({
+      const adopcionesConApodo = data.map(t => ({
         ...t,
         autor: apodosMap[t.autor] || t.autor || "Anónimo",
       }));
 
-      setTestimonios(testimoniosConApodo);
+      setAdopciones(adopcionesConApodo);
       setLoading(false);
     };
 
-    fetchTestimonios();
+    fetchAdopciones();
   }, []);
 
-  const testimoniosResumidos = summary ? testimonios.slice(0, 1) : testimonios;
+  const adopcionesResumidas = summary ? adopciones.slice(0, 1) : adopciones;
 
   return (
     <section className="max-w-3xl px-6 py-8 mx-auto bg-white rounded-lg shadow-md">
       {showHeader && (
-        <h2 className="mb-6 text-3xl font-bold text-center text-purple-800">Casos de Éxito</h2>
+        <h2 className="mb-6 text-3xl font-bold text-center text-purple-800">Adopciones</h2>
       )}
 
       {loading ? (
-        <p className="text-center text-gray-500">Cargando testimonios...</p>
-      ) : testimonios.length === 0 ? (
-        <p className="text-center text-gray-500">No hay testimonios disponibles.</p>
+        <p className="text-center text-gray-500">Cargando adopciones...</p>
+      ) : adopciones.length === 0 ? (
+        <p className="text-center text-gray-500">No hay adopciones disponibles.</p>
       ) : (
         <div className="space-y-6">
-          {testimoniosResumidos.map((testimonio, index) => (
+          {adopcionesResumidas.map((adopcion, index) => (
             <div key={index} className="p-4 bg-gray-100 rounded-lg shadow-sm">
-              <p className="italic text-gray-800">“{testimonio.contenido}”</p>
-              <p className="mt-2 font-semibold">— {testimonio.autor}</p>
+              <p className="italic text-gray-800">“{adopcion.contenido}”</p>
+              <p className="mt-2 font-semibold">— {adopcion.autor}</p>
             </div>
           ))}
         </div>
       )}
 
-      {summary && testimonios.length > 0 && (
+      {summary && adopciones.length > 0 && (
         <div className="mt-6 text-center">
           <button
-            onClick={() => navigate('/casos-exito')}
+            onClick={() => navigate('/adopciones')}
             className="px-4 py-2 font-semibold text-white bg-blue-600 rounded hover:bg-blue-700"
             type="button"
           >
-            Ver más testimonios
+            Ver más adopciones
           </button>
         </div>
       )}

@@ -3,6 +3,76 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
+// Nuevo componente para Testimonios de la app
+function TestimoniosHome() {
+  const navigate = useNavigate();
+  const [testimoniosApp, setTestimoniosApp] = useState([]);
+  const [loadingAppTestimonios, setLoadingAppTestimonios] = useState(true);
+
+  useEffect(() => {
+    const fetchAppTestimonios = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("entradas_blog")
+          .select("id, titulo, contenido, imagen_url")
+          .eq("categoria", "Testimonios")
+          .order("creado_en", { ascending: false })
+          .limit(3);
+
+        if (error) throw error;
+        setTestimoniosApp(data || []);
+      } catch (err) {
+        console.error("Error cargando testimonios app:", err);
+        setTestimoniosApp([]);
+      } finally {
+        setLoadingAppTestimonios(false);
+      }
+    };
+
+    fetchAppTestimonios();
+  }, []);
+
+  if (loadingAppTestimonios) {
+    return <p className="italic text-center text-gray-500">Cargando testimonios...</p>;
+  }
+  if (testimoniosApp.length === 0) {
+    return <p className="italic text-center text-gray-500">No hay testimonios disponibles.</p>;
+  }
+
+  return (
+    <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+      {testimoniosApp.map((t) => (
+        <motion.div
+          key={t.id}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          whileHover={{ scale: 1.04, boxShadow: "0 15px 30px rgba(34, 197, 94, 0.3)" }}
+          onClick={() => navigate(`/pet-society/historias`)} // Actualización aquí
+          className="flex flex-col p-6 bg-white cursor-pointer select-none rounded-2xl"
+        >
+          <h3 className="mb-3 text-xl font-semibold text-green-700">{t.titulo}</h3>
+          <p className="flex-grow text-sm leading-relaxed text-gray-700">
+            {t.contenido?.slice(0, 160) || ""}...
+          </p>
+          {t.imagen_url && (
+            <img
+              src={t.imagen_url}
+              alt={t.titulo}
+              className="object-cover w-full h-48 mt-5 rounded-lg"
+              loading="lazy"
+              draggable={false}
+            />
+          )}
+          <button className="self-start px-5 py-2 mt-6 text-sm font-semibold text-white transition bg-green-600 rounded-lg shadow-md hover:bg-green-700">
+            Leer testimonio
+          </button>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -15,9 +85,9 @@ export default function Home() {
   const sections = [
     {
       title: "Adopciones",
-      description: "Encuentra a tu mejor amigo",
+      description: "Encontrá a tu mejor amigo",
       detailedDescription:
-        "Descubre las historias de adopciones y encuentra a tu compañero ideal. Es fácil, rápido y seguro. Haz clic para ver las opciones disponibles y conocer los perfiles de los animales en adopción.",
+        "Descubrí historias de adopciones y conocé los perfiles de animales que buscan un hogar. Fácil, rápido y seguro.",
       image: "/assets/home/adopciones.webp",
       link: "/adopciones",
     },
@@ -25,7 +95,7 @@ export default function Home() {
       title: "Productos",
       description: "Los mejores productos para tu mascota",
       detailedDescription:
-        "Accede a una variedad de productos esenciales para el cuidado de tu mascota, desde alimentos hasta juguetes. Todos nuestros productos están seleccionados con la mejor calidad.",
+        "Desde alimentos hasta juguetes, accedé a productos seleccionados con la mejor calidad.",
       image: "/assets/home/productos.webp",
       link: "/productos",
     },
@@ -33,7 +103,7 @@ export default function Home() {
       title: "Pet Society",
       description: "Consejos, cuidado y más",
       detailedDescription:
-        "Obtén consejos útiles sobre el cuidado de tus mascotas, desde salud hasta bienestar y entretenimiento. Conoce expertos y artículos para mejorar la vida de tu compañero.",
+        "Leé artículos sobre salud, bienestar, entretenimiento y cuidado animal. Todo en un solo lugar.",
       image: "/assets/home/pet-society.webp",
       link: "/pet-society",
     },
@@ -41,17 +111,25 @@ export default function Home() {
       title: "Historias de éxito",
       description: "Casos inspiradores de adopciones",
       detailedDescription:
-        "Lee historias de personas que encontraron a su mascota ideal, y cómo sus vidas cambiaron gracias a la adopción. Inspiración pura para quienes buscan adoptar.",
+        "Personas que cambiaron su vida al adoptar. Inspirate con sus historias.",
       image: "/assets/home/historias.webp",
       link: "/casos-exito",
     },
     {
       title: "Donaciones",
-      description: "Ayuda a organizaciones a seguir adelante",
+      description: "Ayudá a quienes ayudan",
       detailedDescription:
-        "Contribuye a organizaciones sin fines de lucro que trabajan por el bienestar animal. ¡Cada pequeña ayuda cuenta! Tu donación puede marcar la diferencia.",
+        "Contribuí a organizaciones protectoras de animales. Cada ayuda cuenta.",
       image: "/assets/home/donaciones.webp",
       link: "/donaciones",
+    },
+    {
+      title: "Reportar Mascota Perdida",
+      description: "Publicá un aviso en segundos",
+      detailedDescription:
+        "Si perdiste a tu mascota, cargá su foto, ubicación y datos para difundir el aviso y ayudar a encontrarla.",
+      image: "/assets/home/perdida.webp",
+      link: "/mascotas-perdidas",
     },
   ];
 
@@ -61,12 +139,11 @@ export default function Home() {
         const { data, error } = await supabase
           .from("entradas_blog")
           .select("id, titulo, contenido, imagen_url, categoria, autor, creado_en")
-          .eq("categoria", "Testimonios")
+          .eq("categoria", "Historias")
           .order("creado_en", { ascending: false })
           .limit(3);
 
         if (error) throw error;
-
         setTestimonios(data || []);
       } catch (err) {
         console.error("Error cargando testimonios:", err);
@@ -86,7 +163,6 @@ export default function Home() {
           .limit(6);
 
         if (error) throw error;
-
         setProductos(data || []);
       } catch (err) {
         console.error("Error cargando productos:", err);
@@ -100,7 +176,6 @@ export default function Home() {
     fetchProductos();
   }, []);
 
-  // Animación variants
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i) => ({
@@ -138,10 +213,10 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* Secciones de contenido */}
+      {/* Secciones principales */}
       <section className="max-w-screen-xl px-6 py-16 mx-auto">
         <h2 className="text-4xl font-extrabold tracking-tight text-center text-gray-900 mb-14">
-          Explora nuestras secciones
+          Explorá nuestras secciones
         </h2>
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((section, i) => (
@@ -220,7 +295,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
                 whileHover={{ scale: 1.04, boxShadow: "0 15px 30px rgba(34, 197, 94, 0.3)" }}
-                onClick={() => navigate(`/entrada/${t.id}`)}
+                onClick={() => navigate(`/pet-society/historias`)}  // Actualización aquí
                 className="flex flex-col p-6 bg-white cursor-pointer select-none rounded-2xl"
               >
                 <h3 className="mb-3 text-xl font-semibold text-green-700">{t.titulo}</h3>
@@ -245,13 +320,23 @@ export default function Home() {
         )}
       </section>
 
+      {/* Nueva sección Testimonios de nuestra app */}
+      <section className="max-w-screen-xl px-6 py-16 mx-auto mt-12 shadow-lg bg-gray-50 rounded-3xl ring-1 ring-gray-200">
+        <h2 className="mb-10 text-3xl font-extrabold tracking-tight text-center text-gray-900">
+          Testimonios de nuestra app
+        </h2>
+
+        <TestimoniosHome />
+      </section>
+
       {/* Beneficios */}
       <section className="max-w-screen-md px-6 py-16 mx-auto mt-16 text-center shadow-lg bg-green-50 rounded-3xl ring-1 ring-green-300">
         <h2 className="mb-6 text-3xl font-extrabold tracking-tight text-gray-900">
           ¿Por qué elegir <span className="text-green-600">Pet Link</span>?
         </h2>
         <p className="mb-8 text-lg leading-relaxed text-gray-700">
-          En Pet Link, facilitamos el proceso de adopción y conectamos a las personas con sus mascotas ideales. Además, ofrecemos productos y servicios de alta calidad para el bienestar de tus animales.
+          En Pet Link, facilitamos la adopción y conectamos a las personas con sus mascotas ideales.
+          Además, ofrecemos productos y servicios de alta calidad para el bienestar animal.
         </p>
         <button
           onClick={() => navigate("/nosotros")}

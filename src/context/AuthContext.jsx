@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
     // Obtener la sesión al cargar la app
     supabase.auth.getSession().then(({ data }) => {
       const sessionUser = data?.session?.user;
+      console.log("🧪 Sesión inicial:", sessionUser); // Log para depurar
+
       if (sessionUser) {
         setUser(sessionUser);
         setIsLoggedIn(true);
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     // Escuchar cambios en la sesión
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        console.log("🧪 Cambio auth:", _event, session); // Log para depurar
         if (session?.user) {
           setUser(session.user);
           setIsLoggedIn(true);
@@ -73,25 +76,25 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
     if (error) throw error;
 
-    const user = data?.user;
-    console.log("🧪 USER DESPUÉS DE REGISTRO:", user); // <-- Log importante para depurar
+    const newUser = data?.user;
+    console.log("🧪 USER DESPUÉS DE REGISTRO:", newUser); // Log importante
 
-    if (user) {
+    if (newUser) {
       // Insertar usuario con más datos en la tabla 'usuarios'
       const { error: insertError } = await supabase
         .from("usuarios")
         .insert([
           {
-            id: user.id,               // UUID de auth
-            correo: user.email,         // Email del usuario
-            nombre: nombre,             // Nombre
-            apellido: apellido,         // Apellido
-            // Agregar más campos si lo necesitas, como 'telefono', 'avatar_url', etc.
+            id: newUser.id,               // UUID de auth
+            correo: newUser.email,        // Email del usuario
+            nombre: nombre,               // Nombre
+            apellido: apellido,           // Apellido
+            // Agregar más campos si se necesitan
           },
         ]);
 
       if (insertError) {
-        console.error("❌ Error al insertar en usuarios:", insertError); // <-- Log de error
+        console.error("❌ Error al insertar en usuarios:", insertError);
         throw insertError;
       }
     }

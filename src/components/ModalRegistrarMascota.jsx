@@ -8,7 +8,6 @@ const provinciasArgentinas = [
   "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán",
 ];
 
-// Limpia nombre archivo, manteniendo extensión en minúscula
 function sanitizeFileName(name) {
   const nameWithoutExt = name.replace(/\.[^/.]+$/, "");
   const extension = name.split('.').pop().toLowerCase();
@@ -21,7 +20,12 @@ function sanitizeFileName(name) {
   );
 }
 
-export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgregada }) {
+export default function ModalRegistrarMascota({
+  onClose,
+  usuarioId,
+  onMascotaAgregada,
+  estadoInicial
+}) {
   const [form, setForm] = useState({
     nombre: "",
     especie: "",
@@ -33,7 +37,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
     sexo: "",
     caracteristicas: "",
     cuidados_especiales: "",
-    estado: "propia",
+    estado: estadoInicial || "propia",
     foto: null,
   });
 
@@ -50,7 +54,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
           setError("Solo se permiten archivos de imagen.");
           return;
         }
-        if (file.size > 5 * 1024 * 1024) { // 5MB max
+        if (file.size > 5 * 1024 * 1024) {
           setError("La imagen debe ser menor a 5MB.");
           return;
         }
@@ -95,7 +99,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
       }
 
       if (!/^\d{6,15}$/.test(form.telefono)) {
-        setError("El teléfono debe ser un número válido (sin espacios ni símbolos).");
+        setError("El teléfono debe ser un número válido.");
         setLoading(false);
         return;
       }
@@ -117,8 +121,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
       });
 
       if (insertError) {
-        setError(`Error al insertar en la base de datos: ${insertError.message}`);
-        console.error(insertError);
+        setError(`Error al guardar: ${insertError.message}`);
         setLoading(false);
         return;
       }
@@ -135,41 +138,35 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      <div className="w-full max-w-lg p-6 bg-white rounded-lg shadow-lg overflow-auto max-h-[90vh] sm:max-w-md sm:h-auto md:max-w-2xl lg:max-w-3xl xl:max-w-4xl pb-16">
-        <h2 id="modal-title" className="mb-4 text-xl font-semibold text-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-3 bg-black bg-opacity-50">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-y-auto max-h-[90vh] p-5 sm:p-6">
+        <h2 className="mb-6 text-2xl font-extrabold text-center text-green-700">
           Registrar Mascota
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-base font-medium">
           <input
             name="nombre"
             placeholder="Nombre *"
             required
             value={form.nombre}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
-            aria-required="true"
+            className="w-full p-3 border border-gray-300 rounded-xl"
           />
           <input
             name="especie"
-            placeholder="Especie (ej: perro, gato) *"
+            placeholder="Especie *"
             required
             value={form.especie}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
-            aria-required="true"
+            className="w-full p-3 border border-gray-300 rounded-xl"
           />
           <input
             name="raza"
             placeholder="Raza"
             value={form.raza}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border border-gray-300 rounded-xl"
           />
           <input
             name="edad"
@@ -178,24 +175,19 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
             placeholder="Edad"
             value={form.edad}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border border-gray-300 rounded-xl"
           />
 
           <select
             name="provincia"
             value={form.provincia}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border border-gray-300 rounded-xl"
             required
-            aria-required="true"
           >
-            <option value="" disabled>
-              Seleccioná una provincia *
-            </option>
+            <option value="" disabled>Seleccioná una provincia *</option>
             {provinciasArgentinas.map((prov) => (
-              <option key={prov} value={prov}>
-                {prov}
-              </option>
+              <option key={prov} value={prov}>{prov}</option>
             ))}
           </select>
 
@@ -205,24 +197,19 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
             required
             value={form.telefono}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
-            aria-required="true"
+            className="w-full p-3 border border-gray-300 rounded-xl"
             inputMode="tel"
             pattern="\d{6,15}"
-            title="Ingrese un número de teléfono válido sin espacios ni símbolos."
           />
 
           <select
             name="sexo"
             value={form.sexo}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border border-gray-300 rounded-xl"
             required
-            aria-required="true"
           >
-            <option value="" disabled>
-              Seleccioná el sexo *
-            </option>
+            <option value="" disabled>Seleccioná el sexo *</option>
             <option value="macho">Macho</option>
             <option value="hembra">Hembra</option>
           </select>
@@ -232,34 +219,35 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
             placeholder="Características"
             value={form.caracteristicas}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border border-gray-300 rounded-xl"
           />
           <textarea
             name="cuidados_especiales"
             placeholder="Cuidados especiales"
             value={form.cuidados_especiales}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border border-gray-300 rounded-xl"
           />
           <textarea
             name="descripcion"
             placeholder="Descripción"
             value={form.descripcion}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border border-gray-300 rounded-xl"
           />
 
-          <select
-            name="estado"
-            value={form.estado}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-            required
-            aria-required="true"
-          >
-            <option value="propia">Propia</option>
-            <option value="en_adopcion">En adopción</option>
-          </select>
+          {!estadoInicial && (
+            <select
+              name="estado"
+              value={form.estado}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-xl"
+              required
+            >
+              <option value="propia">Propia</option>
+              <option value="en_adopcion">En adopción</option>
+            </select>
+          )}
 
           <input
             type="file"
@@ -267,28 +255,16 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
             accept="image/*"
             onChange={handleChange}
             className="w-full"
-            aria-describedby="file-desc"
           />
-          <p id="file-desc" className="mb-2 text-xs text-gray-500">
-            Tamaño máximo: 5MB. Solo imágenes.
-          </p>
+          <p className="text-sm text-gray-500">Solo imágenes. Máximo 5MB.</p>
+          {uploadingImage && <p className="text-sm text-blue-600">Subiendo imagen...</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
-          {uploadingImage && (
-            <p className="text-sm text-blue-600" aria-live="polite">
-              Subiendo imagen...
-            </p>
-          )}
-          {error && (
-            <p className="text-sm text-red-500" aria-live="assertive">
-              {error}
-            </p>
-          )}
-
-          <div className="flex justify-between mt-4">
+          <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-between">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-800 bg-gray-300 rounded hover:bg-gray-400"
+              className="w-full py-2 text-green-800 bg-gray-200 rounded-full hover:bg-gray-300"
               disabled={loading}
             >
               Cancelar
@@ -296,7 +272,7 @@ export default function ModalRegistrarMascota({ onClose, usuarioId, onMascotaAgr
             <button
               type="submit"
               disabled={loading || uploadingImage}
-              className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+              className="w-full py-2 font-semibold text-white bg-green-600 rounded-full hover:bg-green-700"
             >
               {loading ? "Guardando..." : "Guardar Mascota"}
             </button>

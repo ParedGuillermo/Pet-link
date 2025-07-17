@@ -1,73 +1,87 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import ModalRegistrarMascota from "../components/ModalRegistrarMascota";
 
 export default function Adopciones() {
   const [adopciones, setAdopciones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  // Carga mascotas en adopción
+  const fetchAdopciones = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("mascotas")
+      .select("*")
+      .eq("estado", "en_adopcion");
+
+    if (error) {
+      console.error("Error al obtener adopciones:", error.message);
+      setAdopciones([]);
+    } else {
+      setAdopciones(data);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchAdopciones = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("mascotas")
-        .select("*")
-        .eq("estado", "en_adopcion");
-
-      if (error) {
-        console.error("Error al obtener adopciones:", error.message);
-      } else {
-        setAdopciones(data);
-      }
-      setLoading(false);
-    };
-
     fetchAdopciones();
   }, []);
 
   return (
-    <div className="min-h-screen p-6 pb-24 bg-purple-50">
-      <h1 className="mb-6 text-3xl font-bold text-center text-purple-800">
+    <div className="min-h-screen p-6 font-sans bg-gray-50">
+      <h1 className="mb-8 text-4xl font-extrabold text-center text-green-800">
         Mascotas en Adopción 🐾
       </h1>
 
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-6 py-3 font-semibold text-white transition-colors bg-green-600 rounded-full hover:bg-green-700"
+        >
+          + Registrar adopción
+        </button>
+      </div>
+
       {loading ? (
-        <p className="text-center text-gray-600">Cargando mascotas...</p>
+        <p className="text-center text-gray-600">Cargando mascotas en adopción...</p>
       ) : adopciones.length === 0 ? (
-        <p className="text-center text-gray-600">
-          No hay mascotas disponibles en este momento.
-        </p>
+        <p className="text-center text-gray-600">No hay mascotas disponibles para adopción.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid max-w-6xl grid-cols-1 gap-6 mx-auto sm:grid-cols-2 md:grid-cols-3">
           {adopciones.map((mascota) => {
-            const telefonoLimpio = mascota.telefono?.replace(/\D/g, "") || "";
+            const telefonoLimpio = mascota.telefono
+              ? mascota.telefono.toString().replace(/\D/g, "")
+              : "";
 
             return (
               <div
                 key={mascota.id}
-                className="flex flex-col items-center p-4 transition-shadow bg-white rounded-lg shadow hover:shadow-lg"
+                className="flex flex-col items-center p-6 transition-shadow duration-300 bg-white shadow-md rounded-3xl hover:shadow-xl"
               >
                 <img
                   src={mascota.foto_url || "https://placehold.co/300x300?text=Mascota"}
                   alt={mascota.nombre}
-                  className="object-cover w-40 h-40 mb-4 rounded-full"
+                  className="object-cover w-40 h-40 mb-5 rounded-full"
                   loading="lazy"
                 />
-                <h2 className="mb-1 text-xl font-semibold text-purple-700">
-                  {mascota.nombre}
-                </h2>
-                <p className="text-sm text-gray-700">
+                <h2 className="mb-2 text-2xl font-bold text-green-700">{mascota.nombre}</h2>
+                <p className="mb-1 text-sm font-semibold text-gray-700">
                   {mascota.especie} - {mascota.raza || "Sin raza"}
                 </p>
-                <p className="text-sm text-gray-700">
+                <p className="mb-1 text-sm text-gray-700">
                   Edad: {mascota.edad != null ? mascota.edad : "Desconocida"} años
                 </p>
-                <p className="mt-2 text-sm text-center text-gray-600">
-                  {mascota.descripcion}
+                <p className="mb-3 text-sm text-center text-gray-600">
+                  {mascota.descripcion || "Sin descripción"}
                 </p>
-                <p className="mt-1 text-sm text-gray-500">📍 {mascota.provincia}</p>
-                <p className="text-sm text-gray-500">📞 {mascota.telefono}</p>
+                <p className="mb-1 text-sm text-gray-500">
+                  Estado: {mascota.estado || "Desconocido"}
+                </p>
+                <p className="mb-1 text-sm text-gray-500">
+                  Provincia: {mascota.provincia || "No especificada"}
+                </p>
 
-                {/* Botón contacto WhatsApp */}
                 {telefonoLimpio && (
                   <a
                     href={`https://wa.me/54${telefonoLimpio}`}
@@ -91,6 +105,17 @@ export default function Adopciones() {
             );
           })}
         </div>
+      )}
+
+      {showModal && (
+        <ModalRegistrarMascota
+          onClose={() => setShowModal(false)}
+          onMascotaAgregada={() => {
+            setShowModal(false);
+            fetchAdopciones();
+          }}
+          estadoInicial="en_adopcion" // ✅ Aquí se pasa el estado predefinido
+        />
       )}
     </div>
   );

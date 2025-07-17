@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import ReportLostPets from "../components/ReportLostPets";
-import { useLocation } from "react-router-dom";
+import ReportLostPets from "../components/ReportLostPets"; // corregí el nombre y ruta
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function LostPets() {
   const [mascotasPerdidas, setMascotasPerdidas] = useState([]);
@@ -10,6 +11,9 @@ export default function LostPets() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const usuarioId = user?.id || null;
 
   const fetchMascotas = async () => {
     setLoading(true);
@@ -32,17 +36,24 @@ export default function LostPets() {
     fetchMascotas();
   }, []);
 
-  // Abrir modal si detecta ?reportar=true en la URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get("reportar") === "true") {
+    if (params.get("reportar") === "true" && usuarioId) {
       setModalOpen(true);
     }
-  }, [location.search]);
+  }, [location.search, usuarioId]);
 
   const handleMascotaReportada = () => {
     setModalOpen(false);
     fetchMascotas();
+  };
+
+  const handleClickReportar = () => {
+    if (!usuarioId) {
+      navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+    } else {
+      setModalOpen(true);
+    }
   };
 
   return (
@@ -53,14 +64,16 @@ export default function LostPets() {
 
       <div className="flex justify-center mb-6">
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={handleClickReportar}
           className="px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
         >
           Reportar Mascota Perdida
         </button>
       </div>
 
-      {loading && <p className="text-lg text-center text-gray-600">Cargando...</p>}
+      {loading && (
+        <p className="text-lg text-center text-gray-600">Cargando...</p>
+      )}
       {error && <p className="text-center text-red-600">{error}</p>}
 
       <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -87,6 +100,7 @@ export default function LostPets() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center mt-3 text-sm text-green-600 hover:underline"
               >
+                {/* Icono WhatsApp */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="w-5 h-5 mr-2"
@@ -108,11 +122,11 @@ export default function LostPets() {
         </p>
       )}
 
-      {/* Modal para reportar mascota perdida */}
       {modalOpen && (
         <ReportLostPets
           onClose={() => setModalOpen(false)}
           onMascotaReportada={handleMascotaReportada}
+          usuarioId={usuarioId}
         />
       )}
     </div>

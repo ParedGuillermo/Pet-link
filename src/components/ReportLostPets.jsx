@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 const provinciasArgentinas = [
@@ -13,6 +14,9 @@ function sanitizeFileName(name) {
 }
 
 export default function ModalReportarMascota({ onClose, usuarioId, onMascotaReportada }) {
+  const navigate = useNavigate();
+  const [checkingUser, setCheckingUser] = useState(true);
+
   const [form, setForm] = useState({
     nombre: "",
     especie: "",
@@ -30,6 +34,15 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (usuarioId === null) {
+      onClose();
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+    } else if (usuarioId) {
+      setCheckingUser(false);
+    }
+  }, [usuarioId, navigate, onClose]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -59,7 +72,6 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
       return;
     }
 
-    // Validar campos obligatorios
     if (!form.nombre || !form.especie || !form.provincia || !form.telefono) {
       setError("Por favor, completá todos los campos obligatorios.");
       return;
@@ -116,7 +128,6 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
         return;
       }
 
-      // Opcional: resetear form
       setForm({
         nombre: "",
         especie: "",
@@ -142,10 +153,11 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
     }
   };
 
+  if (checkingUser) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
       <div className="relative w-full max-w-lg p-6 bg-white rounded-3xl shadow-xl max-h-[90vh] overflow-auto">
-        {/* Botón cerrar */}
         <button
           onClick={onClose}
           className="absolute text-xl font-bold text-gray-500 top-4 right-4 hover:text-red-500"
@@ -184,59 +196,8 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
             name="edad"
             type="number"
             min="0"
-            placeholder="Edad"
+            placeholder="Edad (años)"
             value={form.edad}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg shadow-sm"
-          />
-
-          <select
-            name="provincia"
-            value={form.provincia}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg shadow-sm"
-          >
-            <option value="">Seleccioná una provincia *</option>
-            {provinciasArgentinas.map((prov) => (
-              <option key={prov} value={prov}>
-                {prov}
-              </option>
-            ))}
-          </select>
-
-          <input
-            name="telefono"
-            placeholder="Teléfono *"
-            required
-            value={form.telefono}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg shadow-sm"
-            inputMode="tel"
-          />
-
-          <select
-            name="sexo"
-            value={form.sexo}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg shadow-sm"
-          >
-            <option value="">Seleccioná el sexo</option>
-            <option value="macho">Macho</option>
-            <option value="hembra">Hembra</option>
-          </select>
-
-          <textarea
-            name="caracteristicas"
-            placeholder="Características"
-            value={form.caracteristicas}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg shadow-sm"
-          />
-          <textarea
-            name="cuidados_especiales"
-            placeholder="Cuidados especiales"
-            value={form.cuidados_especiales}
             onChange={handleChange}
             className="w-full p-3 border rounded-lg shadow-sm"
           />
@@ -246,44 +207,77 @@ export default function ModalReportarMascota({ onClose, usuarioId, onMascotaRepo
             value={form.descripcion}
             onChange={handleChange}
             className="w-full p-3 border rounded-lg shadow-sm"
+            rows={3}
           />
-
-          <input
-            type="file"
-            name="foto"
-            accept="image/*"
+          <select
+            name="provincia"
+            required
+            value={form.provincia}
             onChange={handleChange}
-            className="w-full"
+            className="w-full p-3 border rounded-lg shadow-sm"
+          >
+            <option value="">Seleccioná una provincia *</option>
+            {provinciasArgentinas.map((prov) => (
+              <option key={prov} value={prov}>
+                {prov}
+              </option>
+            ))}
+          </select>
+          <input
+            name="telefono"
+            type="tel"
+            placeholder="Teléfono (sin + ni espacios) *"
+            required
+            value={form.telefono}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
           />
-
-          {uploadingImage && (
-            <p className="text-sm text-blue-600" aria-live="polite">
-              Subiendo imagen...
-            </p>
-          )}
-          {error && (
-            <p className="text-sm text-red-500" aria-live="polite">
-              {error}
-            </p>
-          )}
-
-          <div className="flex justify-between mt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300"
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading || uploadingImage}
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-            >
-              {loading ? "Reportando..." : "Reportar Mascota"}
-            </button>
+          <select
+            name="sexo"
+            value={form.sexo}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+          >
+            <option value="">Sexo</option>
+            <option value="Macho">Macho</option>
+            <option value="Hembra">Hembra</option>
+          </select>
+          <textarea
+            name="caracteristicas"
+            placeholder="Características"
+            value={form.caracteristicas}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+            rows={2}
+          />
+          <textarea
+            name="cuidados_especiales"
+            placeholder="Cuidados especiales"
+            value={form.cuidados_especiales}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg shadow-sm"
+            rows={2}
+          />
+          <div>
+            <label className="block mb-1 font-semibold">Foto</label>
+            <input
+              type="file"
+              name="foto"
+              accept="image/*"
+              onChange={handleChange}
+              className="w-full"
+            />
           </div>
+
+          {error && <p className="text-red-600">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading || uploadingImage}
+            className="w-full px-6 py-3 mt-4 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? "Guardando..." : "Reportar Mascota Perdida"}
+          </button>
         </form>
       </div>
     </div>
